@@ -1,0 +1,885 @@
+\documentclass[11pt]{article}
+% Bien dich: pdflatex (hoac Overleaf). Hinh ve bang TikZ/pgfplots, khong can anh ngoai.
+\usepackage[T5]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage[vietnamese]{babel}
+\usepackage[a4paper,margin=2.3cm]{geometry}
+\usepackage{amsmath,amssymb}
+\usepackage{booktabs}
+\usepackage{array}
+\usepackage{float}
+\usepackage{caption}
+\usepackage{xcolor}
+\usepackage{tikz}
+\usetikzlibrary{positioning,arrows.meta,calc}
+\usepackage{pgfplots}
+\pgfplotsset{compat=1.17}
+\usepackage[hidelinks]{hyperref}
+
+\definecolor{cOrig}{HTML}{7F7F7F}
+\definecolor{cLBR}{HTML}{1F77B4}
+\definecolor{cPos}{HTML}{2CA02C}
+\definecolor{cNeg}{HTML}{D62728}
+\definecolor{cBox}{HTML}{EAF2FB}
+\definecolor{cNew}{HTML}{E8F5E9}
+
+\newcommand{\R}{\mathbb{R}}
+\newcommand{\bmu}{\boldsymbol{\mu}}
+\newcommand{\bSigma}{\boldsymbol{\Sigma}}
+\newcommand{\vf}{\mathbf{f}}
+\newcommand{\vx}{\mathbf{x}}
+\newcommand{\vz}{\mathbf{z}}
+\newcommand{\vw}{\mathbf{w}}
+\newcommand{\vu}{\mathbf{u}}
+\newcommand{\LN}{\mathrm{LN}}
+\newcommand{\muz}{\bmu^{z}}
+\newcommand{\Sz}{\bSigma^{z}}
+
+\title{Báo cáo dự án khoa học\\[4pt]
+\large LBR: phát lại lớp cũ qua khối cuối của ViT\\
+cho học tăng dần theo lớp không lưu ảnh với mô hình tiền huấn luyện}
+\author{Thị Thanh Nga Hoàng}
+\date{07/11/2026}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+Trong học tăng dần theo lớp không lưu ảnh, các phương pháp mạnh nhất dựa trên ViT tiền huấn luyện (SLCA, SSIAT, RSIAT)
+``nhớ'' mỗi lớp cũ bằng một phân phối Gauss của \emph{đặc trưng cuối} $\vf$, rồi huấn luyện lại bộ phân loại trên các
+điểm giả bốc từ phân phối đó. Cách làm này ngầm giả định rằng đặc trưng thật của lớp cũ dưới mô hình hiện tại vẫn có
+dạng Gauss, và rằng độ trôi của nó có thể bù bằng một phép dịch hay phép biến đổi tuyến tính trên $\vf$. Cả hai giả
+định bỏ qua việc $\vf$ là đầu ra phi tuyến của khối Transformer cuối, mà adapter của khối này thay đổi ở mọi bước học.
+Báo cáo trình bày \textbf{LBR} (Last-Block Replay): lưu phân phối của lớp cũ ở trạng thái trung gian $\vz$ ngay
+\emph{trước} phần phi tuyến của khối cuối, bám theo độ trôi của nó, và khi căn chỉnh bộ phân loại thì cho từng điểm giả
+đi qua \emph{chính} khối cuối hiện tại. LBR không lưu ảnh, không thêm tham số huấn luyện. Trên ImageNet-A (10 bước,
+3 thứ tự lớp), LBR đạt $\mathbf{73.26/65.62}$ (Avg/Last) so với $72.68/65.02$ của RSIAT gốc chạy lại cùng điều kiện
+($+0.58$ Avg, $+0.59$ Last; Last cao hơn ở 3/3 seed). Trên VTAB seed 1993, LBR đạt $94.97/95.10$ so với $94.72/94.69$.
+Các seed còn lại của VTAB và toàn bộ CUB đang chạy.
+\end{abstract}
+
+\tableofcontents
+\newpage
+
+% =====================================================================================================================
+\section{Bài toán và ký hiệu}\label{sec:setup}
+
+\paragraph{Mô hình.} Một ảnh $\vx$ đi qua \textbf{bộ trích đặc trưng} (ViT-B/16 \cite{vit} tiền huấn luyện trên ImageNet-21K,
+cộng adapter) để thành vector $\vf(\vx)\in\R^{d}$, $d=768$. \textbf{Bộ phân loại} (head) gồm một vector trọng số
+$\vw_c\in\R^d$ cho mỗi lớp $c$ và dự đoán
+\begin{equation}\label{eq:pred}
+\hat y(\vx)=\arg\max_c\ \cos\big(\vw_c,\vf(\vx)\big),
+\end{equation}
+tức chọn lớp có trọng số ``cùng hướng'' nhất với đặc trưng. Độ dài của $\vf$ không ảnh hưởng tới dự đoán, chỉ hướng của
+nó.
+
+\paragraph{Học tăng dần theo lớp, không lưu ảnh.} Dữ liệu đến theo $T$ bước $t=0,1,\dots,T-1$. Bước $t$ mang tập lớp mới
+$\mathcal{C}_t$ cùng ảnh huấn luyện của chúng; $K_t=|\mathcal{C}_0|+\dots+|\mathcal{C}_{t-1}|$ là số lớp đã gặp trước
+bước $t$ (``lớp cũ''). Mô hình \textbf{không được giữ ảnh} của các bước trước. Sau mỗi bước, nó phải phân loại đúng mọi
+lớp đã gặp mà không biết ảnh kiểm tra thuộc bước nào. Trên ImageNet-A: 200 lớp, $T=10$, mỗi bước 20 lớp, mỗi lớp
+khoảng $n_c\approx30$ ảnh huấn luyện.
+
+\paragraph{Ký hiệu khác.} $\theta_t$: tham số adapter sau bước $t$ (backbone gốc luôn đóng băng); $t_c$: bước mà lớp
+$c$ được học; $\vf_{\theta}(\vx)$: đặc trưng dưới tham số $\theta$.
+
+\paragraph{Độ đo.} Sau mỗi bước $t$, đo độ chính xác top-1 $A_t$ trên ảnh kiểm tra của mọi lớp đã gặp. $\text{Avg} =
+\frac1T\sum_t A_t$, $\text{Last}=A_{T-1}$.
+
+% =====================================================================================================================
+\section{Gốc rễ vấn đề}\label{sec:problem}
+
+\subsection{Ba nguồn gây quên}\label{sec:three}
+\begin{enumerate}
+\item \textbf{Trôi biểu diễn (representation drift).} Adapter được dùng chung cho mọi lớp. Khi nó học lớp mới ở bước
+      $t$, đặc trưng của \emph{mọi} ảnh đều dịch chuyển, kể cả ảnh lớp cũ: $\vf_{\theta_t}(\vx)\ne\vf_{\theta_{t-1}}(\vx)$.
+      Mọi thứ đã lưu về lớp cũ trong không gian đặc trưng trở nên lỗi thời.
+\item \textbf{Lệch bộ phân loại.} Ở bước $t$, head chỉ thấy ảnh lớp mới. Trọng số của lớp cũ không được cập nhật theo
+      đặc trưng mới, và biên giữa lớp cũ với lớp mới không được học từ dữ liệu của cả hai phía. Kết quả: ảnh lớp cũ bị
+      đoán nhầm thành lớp mới.
+\item \textbf{Dữ liệu thay thế không khớp đặc trưng thật.} Để sửa (2) mà không có ảnh cũ, ta phải tạo ra dữ liệu thay
+      thế cho lớp cũ. Bộ phân loại học từ dữ liệu thay thế chỉ tốt bằng mức dữ liệu đó giống đặc trưng thật của ảnh lớp
+      cũ dưới mô hình \emph{hiện tại}. Đây là nút thắt mà LBR nhắm vào.
+\end{enumerate}
+
+\subsection{Cách xử lý hiện nay: phát lại thống kê ở $\vf$}\label{sec:ca}
+SLCA \cite{slca}, SSIAT \cite{ssiat} và RSIAT \cite{rsiat} giải quyết (2) bằng \textbf{căn chỉnh bộ phân loại}
+(classifier alignment, CA). Khi học xong lớp $c$, lưu trung bình và hiệp phương sai của đặc trưng huấn luyện:
+\begin{equation}\label{eq:stats_f}
+\bmu^f_c=\frac1{n_c}\sum_{i:y_i=c}\vf(\vx_i),\qquad
+\bSigma^f_c=\frac1{n_c-1}\sum_{i:y_i=c}\big(\vf(\vx_i)-\bmu^f_c\big)\big(\vf(\vx_i)-\bmu^f_c\big)^{\!\top}.
+\end{equation}
+$\bmu^f_c$ cho biết lớp $c$ nằm ở đâu trong không gian đặc trưng, $\bSigma^f_c$ cho biết nó trải rộng theo những hướng
+nào. Sau mỗi bước, bốc điểm giả $\tilde\vf\sim\mathcal N(\bmu^f_c,\bSigma^f_c)$ cho \emph{mọi} lớp đã gặp và huấn luyện
+lại head trên các cặp $(\tilde\vf,c)$. Vì head giờ thấy ``dữ liệu'' của cả lớp cũ lẫn lớp mới, biên giữa chúng được học
+lại. Nguồn (1) được xử lý bằng cách cập nhật $\bmu^f_c$ theo độ trôi ước lượng được (mục~\ref{sec:rsiat}).
+
+\subsection{Chỗ hở: hai giả định ẩn}\label{sec:gap}
+Cách làm trên đúng nếu hai điều sau đúng:
+\begin{enumerate}
+\item[(G1)] Đặc trưng thật của lớp cũ \emph{dưới adapter hiện tại} có phân phối gần với một Gauss ở $\vf$.
+\item[(G2)] Độ trôi của lớp cũ bù được bằng một phép dịch (hoặc biến đổi tuyến tính) trên $\vf$.
+\end{enumerate}
+Nhưng $\vf$ là đầu ra của khối Transformer thứ 12 (khối cuối). Viết khối này ra (adapter song song kiểu AdaptFormer
+\cite{adaptformer}, như RSIAT), với $X$ là ma trận token đầu vào khối (token CLS và 196 token ảnh):
+\begin{align}
+X' &= X + \mathrm{MSA}\big(\LN_1(X)\big), \label{eq:attn}\\
+\vf &= \LN_{\text{cuối}}\Big(X' + \mathrm{MLP}\big(\LN_2(X')\big) + s_a\,\mathrm{Adapter}_\theta(X')\Big)_{\text{CLS}}.
+\label{eq:block}
+\end{align}
+Các đại lượng:
+\begin{itemize}
+\item $\mathrm{MSA}$: tự chú ý nhiều đầu (multi-head self-attention), \emph{trộn thông tin giữa các token}. Trọng số của
+      nó đóng băng.
+\item $\LN(\vu)=\boldsymbol\gamma\odot\frac{\vu-\bar u\mathbf 1}{\sigma(\vu)}+\boldsymbol\beta$: LayerNorm, chuẩn hoá
+      từng token về trung bình 0, độ lệch chuẩn 1 rồi co giãn theo $\boldsymbol\gamma,\boldsymbol\beta$ ($\bar u$,
+      $\sigma(\vu)$: trung bình và độ lệch chuẩn của các thành phần của $\vu$).
+\item $\mathrm{MLP}(\vu)=W_2\,\mathrm{GELU}(W_1\vu+b_1)+b_2$: mạng truyền thẳng 768--3072--768 của ViT, đóng băng.
+\item $\mathrm{Adapter}_\theta(\vu)=W_{\uparrow}\,\mathrm{ReLU}(W_{\downarrow}\vu)$: nhánh song song thắt cổ chai
+      768--64--768, \emph{là phần duy nhất được học} trong khối; $s_a=0.1$ là hệ số tỉ lệ cố định.
+\item Chỉ số CLS: lấy vector của token phân loại.
+\end{itemize}
+Ba phép trong \eqref{eq:block} (LayerNorm, GELU, ReLU) đều phi tuyến, và $\theta$ đổi ở mọi bước. Hệ quả:
+\begin{itemize}
+\item \textbf{Vi phạm (G1).} LayerNorm cuối ép mọi $\vf$ về gần một ``vỏ cầu'' (chuẩn hoá độ lớn, sau đó co giãn theo
+      từng chiều). Một Gauss trong $\R^{768}$ không có cấu trúc này: nó đặt xác suất cả vào những vùng mà mạng không bao
+      giờ sinh ra đặc trưng.
+\item \textbf{Vi phạm (G2).} Khi $\theta_{t-1}\to\theta_t$, adapter khối cuối đổi, nên ánh xạ $X'\mapsto\vf$ đổi một
+      cách phi tuyến. Phần trôi do khối cuối gây ra khác nhau ở từng vùng của không gian, không bắt được bằng một phép
+      dịch chung cho cả lớp.
+\end{itemize}
+
+% =====================================================================================================================
+\section{Phương pháp nền: RSIAT gốc}\label{sec:rsiat}
+RSIAT \cite{rsiat} là điểm xuất phát và là đối chứng chính. Nó dùng một adapter cho mọi bước (số tham số không tăng).
+Mỗi bước gồm bốn phần.
+
+\paragraph{(1) Hàm mất phân loại CosFace \cite{cosface}.} Với ảnh $\vx$ nhãn $y$ và $\cos\phi_j=\cos(\vw_j,\vf(\vx))$:
+\begin{equation}\label{eq:cosface}
+\mathcal L_{\text{cos}}=-\log\frac{e^{\sigma(\cos\phi_y-m)}}{e^{\sigma(\cos\phi_y-m)}+\sum_{j\ne y}e^{\sigma\cos\phi_j}}.
+\end{equation}
+$\sigma$ (thang, 30 trên ImageNet-A) khuếch đại cosine thành logit; $m$ (biên, 0.3) bắt lớp đúng phải hơn các lớp khác
+một khoảng $m$ về cosine, làm các lớp tách nhau rõ hơn so với softmax thường. Ở bước $t\ge1$ tổng chỉ lấy trên lớp mới.
+
+\paragraph{(2) Ràng buộc biểu diễn.}
+\begin{itemize}
+\item Bước 0: $\mathcal L_{RS}=\frac1{|P|}\sum_{(i,j)\in P}\big[1-\cos(\vf_i,\vf_j)\big]_+ +
+      \alpha\frac1{|N|}\sum_{(i,j)\in N}\big[\cos(\vf_i,\vf_j)-m_{rs}\big]_+$, với $P$ là các cặp ảnh cùng lớp, $N$ các
+      cặp khác lớp trong batch, $[\cdot]_+=\max(\cdot,0)$. Số hạng đầu kéo ảnh cùng lớp về cùng hướng; số hạng sau phạt
+      cặp khác lớp có cosine vượt $m_{rs}$. (Trên ImageNet-A $m_{rs}=1.5>1$, nên số hạng sau luôn bằng 0.)
+\item Bước $t\ge1$: bộ tự mã hoá dư $P(\vu)=\vu+\mathrm{Dec}(\mathrm{Enc}(\vu))$ (RAE, mã 128 chiều, đầu ra sigmoid)
+      được học cùng adapter, và
+      \begin{equation}\label{eq:rae}
+      \mathcal L_{RAE}=\beta\cdot\frac1d\big\|\vf_{\theta_t}(\vx)-P\big(\vf_{\theta_{t-1}}(\vx)\big)\big\|^2 .
+      \end{equation}
+      $\vf_{\theta_{t-1}}$ là đặc trưng qua bản sao đóng băng của mô hình cuối bước trước. Hàm mất buộc đặc trưng mới
+      chỉ được khác đặc trưng cũ một phần dư $P(\cdot)-\mathrm{id}$ bị chặn (đầu ra sigmoid nằm trong $(0,1)$), nhờ đó
+      hạn chế độ trôi mà không đóng băng hẳn. $\beta=3$ trên ImageNet-A.
+\item Thêm $\gamma\,\mathcal L_{orth}$: trung bình cosine giữa $P(\bmu^f_c)$ của các lớp cũ và $P(\vf_{\theta_{t-1}}(\vx))$
+      của ảnh mới, đẩy ảnh mới ra xa hướng của lớp cũ ($\gamma=6$).
+\end{itemize}
+
+\paragraph{(3) Bù trôi bằng SDC \cite{sdc}.} Với $\Delta_i=\vf_{\theta_t}(\vx_i)-\vf_{\theta_{t-1}}(\vx_i)$ trên ảnh lớp
+mới:
+\begin{equation}\label{eq:sdc}
+\bmu^f_c\leftarrow\bmu^f_c+\frac{\sum_i \omega_{ic}\Delta_i}{\sum_i\omega_{ic}},\qquad
+\omega_{ic}=\exp\!\Big(-\frac{\|\vf_{\theta_{t-1}}(\vx_i)-\bmu^f_c\|^2}{2\sigma_{sdc}^2}\Big),\ \sigma_{sdc}=4.
+\end{equation}
+Lớp cũ được dịch theo trung bình độ dịch chuyển của các ảnh mới nằm gần nó. Hiệp phương sai $\bSigma^f_c$ \emph{không}
+được cập nhật.
+
+\paragraph{(4) CA ở $\vf$.} Mỗi epoch, bốc 256 điểm mỗi lớp từ $\mathcal N(\kappa_c\bmu^f_c,\bSigma^f_c)$, huấn luyện
+lại head cosine 10 epoch. Hệ số
+\begin{equation}\label{eq:kappa}
+\kappa_c=0.9+0.1\,\frac{t_c+1}{t+1}
+\end{equation}
+bằng 1 với lớp của bước hiện tại và nhỏ dần cho lớp học càng sớm (lớp của bước 0 ở bước 9: $\kappa=0.91$). Nhân trung
+bình với $\kappa_c<1$ kéo đám mây về phía gốc toạ độ trong khi giữ nguyên độ trải; sau khi chuẩn hoá (head dùng cosine),
+đám mây trở nên \emph{phân tán hơn về hướng}. Ý nghĩa: lớp càng cũ thì thống kê của nó đã qua càng nhiều lần bù trôi,
+càng kém chắc chắn, nên được biểu diễn rộng hơn.
+
+\medskip\noindent Mọi bộ nhớ và cả bù trôi lẫn CA đều ở $\vf$, nên chịu đúng hai giả định (G1), (G2).
+
+% =====================================================================================================================
+\section{Phương pháp LBR}\label{sec:lbr}
+
+\subsection{Quan sát làm nên ý tưởng}\label{sec:obs}
+Trong \eqref{eq:block}, mọi phép sau MSA (cộng dư, $\LN_2$, MLP, adapter, $\LN_{\text{cuối}}$) đều tác động \emph{riêng
+lên từng token}: hàng CLS của đầu ra chỉ phụ thuộc vào hàng CLS của $X'$. Đặt
+\begin{equation}\label{eq:z}
+\vz:=X'_{\text{CLS}}\in\R^{768}
+\end{equation}
+(trạng thái của token CLS ngay sau nhánh chú ý của khối cuối). Khi đó $\vf$ là một hàm \emph{tường minh} của $\vz$:
+\begin{equation}\label{eq:h}
+\vf=h_\theta(\vz):=\LN_{\text{cuối}}\Big(\vz+\mathrm{MLP}\big(\LN_2(\vz)\big)+s_a\,\mathrm{Adapter}_\theta(\vz)\Big).
+\end{equation}
+Tính $h_\theta$ không cần ảnh, không cần 196 token ảnh, chỉ cần một vector 768 chiều. Kiểm tra số học: $\vf$ tính lại từ
+$\vz$ khớp $\vf$ của mạng với sai số cỡ $6\cdot10^{-6}$.
+
+$\vz$ là \textbf{tầng sớm nhất} có tính chất này: lùi thêm một bước (vào trong MSA) thì token CLS đã phụ thuộc vào mọi
+token ảnh, không còn tái tạo được từ một vector. Đồng thời $\vz$ nằm \textbf{trước} toàn bộ phần phi tuyến có tham số
+học được của khối cuối. Vì vậy:
+\begin{itemize}
+\item Nếu lưu phân phối của lớp cũ ở $\vz$ và cho điểm giả đi qua $h_{\theta_t}$ hiện tại, thì mọi thay đổi của adapter
+      khối cuối được phản ánh \emph{chính xác}, không cần ước lượng (giảm phụ thuộc vào G2).
+\item Đặc trưng giả $h_{\theta_t}(\vz)$ là đầu ra thật của mạng, nên tự động mang cấu trúc của LayerNorm và các phép
+      phi tuyến (không cần G1 ở $\vf$).
+\end{itemize}
+Giả định Gauss vẫn còn, nhưng được đặt ở $\vz$, một tầng mà mạng chưa ``bẻ cong'' bằng phần phi tuyến cuối.
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}[node distance=6mm and 5mm,
+  blk/.style={draw,rounded corners,minimum height=8mm,align=center,font=\small,fill=cBox},
+  mem/.style={draw,rounded corners,minimum height=8mm,align=center,font=\small,fill=cNew},
+  ar/.style={-{Latex[length=2mm]},thick}]
+\node[blk] (img) {Ảnh $\vx$};
+\node[blk,right=of img] (b1) {Khối 1..11\\(có adapter)};
+\node[blk,right=of b1] (att) {$\LN_1$ + MSA\\khối 12};
+\node[mem,right=of att,minimum width=12mm] (xp) {$\vz$};
+\node[blk,right=of xp] (mlp) {$h_\theta$: MLP, Adapter,\\LN (từng token)};
+\node[blk,right=of mlp] (f) {$\vf$};
+\draw[ar] (img)--(b1); \draw[ar] (b1)--(att); \draw[ar] (att)--(xp); \draw[ar] (xp)--(mlp); \draw[ar] (mlp)--(f);
+\node[font=\footnotesize,align=center,below=9mm of xp,text=cLBR] (lm) {LBR lưu Gauss ở đây\\$\mathcal{N}(\muz_c,\Sz_c)$};
+\node[font=\footnotesize,align=center,below=9mm of f,text=cNeg] (om) {SLCA / SSIAT / RSIAT\\lưu Gauss ở đây};
+\draw[cLBR,dashed,->] (lm)--(xp); \draw[cNeg,dashed,->] (om)--(f);
+\end{tikzpicture}
+\caption{Vị trí bộ nhớ. Đoạn từ $\vz$ tới $\vf$ chỉ gồm phép tính trên một token, nên chạy lại được trên điểm giả.}
+\label{fig:where}
+\end{figure}
+
+\subsection{Tổng quan một bước $t\ge1$}
+Bộ nhớ của LBR sau bước $t-1$: với mỗi lớp đã gặp, một cặp $(\muz_c,\Sz_c)$ ở tầng $\vz$; cộng head
+$\{\vw_c\}$ và RAE. Một bước gồm bốn phần (Hình~\ref{fig:flow}):
+
+\begin{center}
+\fbox{\begin{minipage}{0.94\linewidth}
+\textbf{Bước $t$ của LBR} (lớp mới $\mathcal C_t$, ảnh huấn luyện của lớp mới; bản sao đóng băng $\theta_{t-1}$)
+\begin{enumerate}
+\item \textbf{Huấn luyện adapter} trên ảnh lớp mới: $\mathcal L=\mathcal L_{\text{cos}}+\mathcal L_{RAE}$
+      (mục~\ref{sec:step1}).
+\item \textbf{Bám trôi ở $\vz$}: cho ảnh lớp mới qua $\theta_{t-1}$ và $\theta_t$, ước lượng phép vận chuyển, dời
+      $(\muz_c,\Sz_c)$ của mọi lớp cũ (mục~\ref{sec:step2}).
+\item \textbf{Ghi nhớ lớp mới} ở $\vz$: trung bình và hiệp phương sai vay hình dạng từ lớp gần nhất
+      (mục~\ref{sec:step3}).
+\item \textbf{CA bằng phát lại qua khối cuối}: mỗi epoch, bốc $B$ điểm $\vz$ mỗi lớp từ $\mathcal N(\muz_c,s\Sz_c)$,
+      cho qua $h_{\theta_t}$, dời theo $\kappa_c$, huấn luyện lại head (mục~\ref{sec:step4}).
+\end{enumerate}
+Bước 0 chỉ gồm 1 (không có RAE) và 3.
+\end{minipage}}
+\end{center}
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}[node distance=5mm,
+  st/.style={draw,rounded corners,text width=3.1cm,minimum height=11mm,align=center,font=\small,fill=cBox},
+  nw/.style={st,fill=cNew},
+  ar/.style={-{Latex[length=2mm]},thick}]
+\node[st] (s1) {1. Huấn luyện adapter\\CosFace + RAE};
+\node[nw,right=of s1] (s2) {2. Bám trôi: dời\\$\muz_c,\Sz_c$ lớp cũ};
+\node[nw,right=of s2] (s3) {3. Gauss $\vz$ cho lớp\\mới (vay hình dạng)};
+\node[nw,below=8mm of s3] (s4) {4a. Bốc $\vz$ giả\\mọi lớp ($s$, $B$)};
+\node[nw,left=of s4] (s5) {4b. Qua khối cuối\\hiện tại: $\tilde\vf=h_{\theta_t}(\vz)$};
+\node[st,left=of s5] (s6) {4c--d. Dời theo $\kappa_c$,\\huấn luyện lại head};
+\draw[ar] (s1)--(s2); \draw[ar] (s2)--(s3); \draw[ar] (s3)--(s4); \draw[ar] (s4)--(s5); \draw[ar] (s5)--(s6);
+\end{tikzpicture}
+\caption{Luồng của LBR trong một bước $t\ge1$. Ô xanh lá là phần khác với RSIAT gốc.}
+\label{fig:flow}
+\end{figure}
+
+\subsection{Bước 1: huấn luyện adapter}\label{sec:step1}
+Giống RSIAT: CosFace \eqref{eq:cosface} trên lớp mới và RAE \eqref{eq:rae} ở bước $t\ge1$, cùng siêu tham số
+($\sigma=30$, $m=0.3$, $\beta=3$ trên ImageNet-A; 20 epoch ở bước 0, 15 epoch ở các bước sau, SGD, batch 48). LBR đặt
+$\lambda_{RS}=0$ và $\gamma=0$, tức bỏ $\mathcal L_{RS}$ và $\mathcal L_{orth}$. $\mathcal L_{orth}$ cần prototype
+của lớp cũ ở $\vf$, trong khi LBR không cần lưu thống kê nào ở $\vf$.
+
+Điểm giả của lớp cũ \emph{không} tham gia huấn luyện adapter. LBR chỉ thay đổi những gì xảy ra \emph{sau} khi adapter
+học xong: cách theo dõi lớp cũ (bước 2--3) và dữ liệu cho CA (bước 4).
+
+\subsection{Bước 2: bám trôi ở tầng $\vz$}\label{sec:step2}
+\paragraph{Vì sao cần.} Phát lại qua khối cuối lo được phần trôi của khối 12. Nhưng adapter ở khối 1..11 cũng đổi (dù
+có RAE neo), nên chính $\vz$ của ảnh lớp cũ cũng dịch chuyển. Bước này dời $(\muz_c,\Sz_c)$ theo phần trôi đó.
+
+\paragraph{Dữ liệu.} Chỉ có ảnh lớp mới (không có ảnh cũ). Với mỗi ảnh huấn luyện lớp mới $\vx_i$, $i=1..N$ (biến đổi
+kiểm tra, không tăng cường), lấy cặp
+\[
+\vz_i=\vz_{\theta_{t-1}}(\vx_i)\ \text{(mô hình đầu bước)},\qquad
+\hat\vz_i=\vz_{\theta_t}(\vx_i)\ \text{(mô hình cuối bước)},\qquad \Delta_i=\hat\vz_i-\vz_i .
+\]
+Ý tưởng: ảnh mới đi qua cùng hai mô hình như ảnh cũ, nên cách chúng dịch chuyển cho biết không gian bị biến dạng thế
+nào. Ước lượng được thực hiện một lần, sau khi huấn luyện xong bước $t$.
+
+\paragraph{(a) Gán mềm ảnh mới cho lớp cũ.} Ảnh mới nào ``nằm trong vùng'' của lớp cũ $c$ thì độ dịch chuyển của nó
+đáng tin hơn cho lớp $c$. Dùng mô hình hỗn hợp gồm $K_t$ Gauss của lớp cũ (dùng chung một hiệp phương sai) và một
+thành phần nền:
+\begin{equation}\label{eq:estep}
+r_{ic}=\frac{\pi_c\,\mathcal N(\vz_i;\muz_c,\bar\Sigma)}
+{\sum_{j=1}^{K_t}\pi_j\,\mathcal N(\vz_i;\muz_j,\bar\Sigma)+\pi_{bg}\,\mathcal N(\vz_i;\bmu_{bg},\Sigma_{bg})},
+\qquad \pi_c=\frac{1-\pi_{bg}}{K_t}.
+\end{equation}
+\begin{itemize}
+\item $r_{ic}\in[0,1]$: xác suất ảnh mới $i$ thuộc vùng của lớp cũ $c$ (``trách nhiệm'', như bước E của EM).
+\item $\bar\Sigma=\Sigma_0+\frac{\operatorname{tr}\Sigma_0}{d}I$, với $\Sigma_0=\frac1{K_t}\sum_c\Sz_c$: hiệp phương sai
+      chung, cộng một lượng ridge bằng phương sai trung bình mỗi chiều để ổn định khi nghịch đảo trong 768 chiều.
+\item Thành phần nền $\mathcal N(\bmu_{bg},\Sigma_{bg})$: Gauss khớp trên chính các $\vz_i$ của ảnh mới (cùng cách
+      ridge), xác suất tiên nghiệm $\pi_{bg}=0.5$. Nó ``hút'' những ảnh mới không gần lớp cũ nào, để chúng không làm
+      nhiễu ước lượng của lớp cũ.
+\item $N_c=\sum_i r_{ic}$: lượng bằng chứng (số ảnh mới hiệu dụng) cho lớp $c$.
+\end{itemize}
+
+\paragraph{(b) Phép vận chuyển chung: quay + tịnh tiến.} Mô hình hoá độ dịch chuyển của toàn bộ ảnh mới bằng
+\begin{equation}\label{eq:global}
+\hat\vz\approx Q(\vz-\mathbf m)+\mathbf m+\mathbf m_\Delta,\qquad
+\mathbf m=\frac1N\sum_i\vz_i,\ \ \mathbf m_\Delta=\frac1N\sum_i\Delta_i ,
+\end{equation}
+với $Q$ là ma trận \emph{trực giao} ($Q^\top Q=I$): một phép quay (có thể kèm phản xạ) quanh tâm $\mathbf m$, cộng một
+phép tịnh tiến $\mathbf m_\Delta$. Phép quay giữ nguyên khoảng cách và hình dạng, nên không thể ``bóp méo'' đám mây của
+lớp cũ, chỉ xoay nó cho khớp với hệ toạ độ mới. $Q$ là nghiệm của
+\begin{equation}\label{eq:procrustes}
+Q=\arg\min_{Q^\top Q=I}\ \sum_{i}\big\|(\hat\vz_i-\mathbf m-\mathbf m_\Delta)-Q(\vz_i-\mathbf m)\big\|^2
++\lambda\|Q-I\|_F^2 ,
+\end{equation}
+bài toán Procrustes trực giao có lời giải đóng: với $M=\sum_i(\hat\vz_i-\mathbf m-\mathbf m_\Delta)(\vz_i-\mathbf m)^\top
++\lambda I=U S V^\top$ (SVD), $Q=UV^\top$. Số hạng $\lambda\|Q-I\|_F^2$ kéo $Q$ về ma trận đơn vị (``không quay'') ở các
+hướng có ít dữ liệu: với $N\approx600$ ảnh trong 768 chiều, nhiều hướng không có thông tin. $\lambda=\alpha\cdot\frac1d
+\sum_i\|\vz_i-\mathbf m\|^2$, với $\alpha\in\{0.01,0.1,1,10,100\}$ chọn bằng chia đôi: khớp trên nửa số ảnh của mỗi lớp
+mới, đo sai số dự đoán $\Delta_i$ trên nửa còn lại, lấy $\alpha$ có sai số nhỏ nhất.
+
+\paragraph{(c) Dời trung bình của từng lớp cũ.} Theo phép chung \eqref{eq:global}, trung bình lớp $c$ dịch một đoạn
+\begin{equation}\label{eq:shift_g}
+\boldsymbol\delta^{g}_c=\mathbf m_\Delta+(Q-I)(\muz_c-\mathbf m).
+\end{equation}
+Nếu lớp $c$ có đủ bằng chứng riêng ($N_c\ge5$), tinh chỉnh bằng các ảnh mới nằm trong vùng của nó:
+\begin{equation}\label{eq:shift_l}
+\bar\vz_c=\frac{\sum_i r_{ic}\vz_i}{N_c},\quad \bar\Delta_c=\frac{\sum_i r_{ic}\Delta_i}{N_c},\quad
+\boldsymbol\delta^{loc}_c=\bar\Delta_c+(Q-I)(\muz_c-\bar\vz_c),\quad
+\boldsymbol\delta_c=\frac{n^{\text{eff}}_c\,\boldsymbol\delta^{loc}_c+n_0^{g}\,\boldsymbol\delta^{g}_c}{n^{\text{eff}}_c+n_0^{g}},
+\end{equation}
+với $n^{\text{eff}}_c=(\sum_ir_{ic})^2/\sum_ir_{ic}^2$ là số ảnh hiệu dụng (bằng số ảnh nếu mọi trọng số bằng nhau, nhỏ
+hơn nếu trọng số dồn vào vài ảnh) và $n_0^{g}=50$. $\boldsymbol\delta^{loc}_c$ là độ dịch trung bình của các ảnh gần
+lớp $c$, hiệu chỉnh theo khoảng cách từ tâm của chúng tới $\muz_c$. Công thức trộn là ước lượng co rút: lớp có ít bằng
+chứng riêng ($n^{\text{eff}}_c\ll50$) đi theo phép chung, lớp có nhiều bằng chứng đi theo độ dịch cục bộ. Lớp có
+$N_c<5$ dùng $\boldsymbol\delta_c=\boldsymbol\delta^g_c$.
+
+\paragraph{(d) Cập nhật.}
+\begin{equation}\label{eq:transport}
+\muz_c\leftarrow\muz_c+\boldsymbol\delta_c,\qquad \Sz_c\leftarrow Q\,\Sz_c\,Q^\top .
+\end{equation}
+Hiệp phương sai được xoay cùng hệ toạ độ: nếu $\vz\sim\mathcal N(\bmu,\Sigma)$ thì $Q\vz$ có hiệp phương sai
+$Q\Sigma Q^\top$. Khác với SDC \eqref{eq:sdc}, cả \emph{hướng trải} của lớp cũ được cập nhật, không chỉ vị trí.
+
+\subsection{Bước 3: ghi nhớ lớp mới, vay hình dạng}\label{sec:step3}
+Sau khi bước 2 cập nhật lớp cũ, cho ảnh huấn luyện của mỗi lớp mới $c$ qua mô hình $\theta_t$ để lấy $\vz$, tính trung
+bình $\muz_c$ và hiệp phương sai mẫu $C_c$ (như \eqref{eq:stats_f} nhưng ở $\vz$).
+
+\paragraph{Vấn đề.} $C_c$ ước lượng từ $n_c\approx30$ điểm trong 768 chiều, nên có hạng tối đa $n_c-1=29$: đám mây Gauss
+$\mathcal N(\muz_c,C_c)$ là một ``tấm phẳng'' 29 chiều, phương sai bằng 0 theo 739 hướng còn lại. Ảnh kiểm tra thật của
+lớp $c$ lại có thành phần ở các hướng đó.
+
+\paragraph{Lời giải: vay hình dạng của lớp gần nhất} (theo tinh thần hiệu chỉnh phân phối bằng lớp lân cận
+\cite{freelunch}):
+\begin{equation}\label{eq:borrow}
+P_c=\sum_{j\in\mathcal S_c}a_{cj}\,\Sigma^{\text{src}}_j,\qquad
+a_{cj}=\frac{\exp\big(\tau\cos(\muz_c,\muz_j)\big)}{\sum_{k\in\mathcal S_c}\exp\big(\tau\cos(\muz_c,\muz_k)\big)},\qquad
+\Sz_c=\frac{n_0P_c+(n_c-1)C_c}{n_0+n_c-1}+10^{-3}I .
+\end{equation}
+\begin{itemize}
+\item $\mathcal S_c$: tập nguồn, gồm mọi lớp cũ (nguồn $\Sigma^{\text{src}}_j=\Sz_j$, đã bám trôi ở bước 2) và các lớp
+      mới khác (nguồn $\Sigma^{\text{src}}_j=C_j$), trừ chính lớp $c$.
+\item $a_{cj}$: trọng số vay, softmax theo độ giống nhau về hướng giữa các trung bình. $\tau=256$ rất lớn, nên gần như
+      toàn bộ trọng số dồn vào lớp gần nhất. $P_c$ vì vậy xấp xỉ hiệp phương sai của lớp láng giềng gần nhất.
+\item $n_0=20$: độ tin vào hình dạng vay, tính bằng ``số ảnh giả''. Công thức chính là ước lượng hậu nghiệm kiểu Bayes:
+      $P_c$ là tiên nghiệm có giá trị như $n_0$ ảnh, $C_c$ là dữ liệu có $n_c-1$ bậc tự do. Với $n_c=30$, dữ liệu riêng
+      chiếm $29/49\approx59\%$, hình dạng vay $41\%$.
+\item $10^{-3}I$: một lượng nhỏ để ma trận luôn xác định dương (cần cho phân rã Cholesky ở bước 4).
+\end{itemize}
+Ý nghĩa: các lớp gần nhau trong không gian đặc trưng của một mạng tiền huấn luyện thường có hướng biến thiên giống nhau.
+Vay hình dạng lấp các hướng mà 30 ảnh không đủ để thấy.
+
+Ở bước 0, nguồn chỉ gồm các lớp khác của bước 0.
+
+\subsection{Bước 4: căn chỉnh bộ phân loại bằng phát lại qua khối cuối}\label{sec:step4}
+Gọi $C=K_t+|\mathcal C_t|$ là tổng số lớp, $L_c$ là phân rã Cholesky của $\Sz_c$ ($L_cL_c^\top=\Sz_c$). Head được khởi
+tạo từ trọng số hiện có (lớp cũ: sau CA của bước trước; lớp mới: sau bước 1). Lặp 10 epoch:
+\begin{enumerate}
+\item \textbf{Bốc điểm ở $\vz$.} Với mỗi lớp $c$ (cũ lẫn mới), bốc $B$ điểm
+      \begin{equation}\label{eq:sample}
+      \vz_{c,b}=\muz_c+\sqrt{s}\,L_c\,\boldsymbol\epsilon_{c,b},\qquad \boldsymbol\epsilon_{c,b}\sim\mathcal N(0,I),\ b=1..B,
+      \end{equation}
+      tức $\vz_{c,b}\sim\mathcal N(\muz_c,s\,\Sz_c)$. $s\ge1$ nới rộng đám mây.
+\item \textbf{Cho qua khối cuối hiện tại}, không tính gradient: $\tilde\vf_{c,b}=h_{\theta_t}(\vz_{c,b})$ theo
+      \eqref{eq:h}. Đám mây $\{\tilde\vf_{c,b}\}_b$ \emph{không} còn là Gauss: nó có hình dạng do MLP, adapter và
+      LayerNorm của mạng hiện tại tạo ra.
+\item \textbf{Dời theo $\kappa_c$} \eqref{eq:kappa}: $\tilde\vf_{c,b}\leftarrow\tilde\vf_{c,b}+(\kappa_c-1)\,
+      \overline{\tilde\vf}_c$, với $\overline{\tilde\vf}_c=\frac1B\sum_b\tilde\vf_{c,b}$. Phép này nhân trung bình của
+      đám mây với $\kappa_c$ và giữ nguyên độ lệch của từng điểm quanh trung bình, đúng như $\mathcal
+      N(\kappa_c\bmu,\Sigma)$ của RSIAT nhưng áp dụng cho đám mây không Gauss.
+\item \textbf{Huấn luyện lại head.} Trộn ngẫu nhiên $C\cdot B$ điểm, chia thành $C$ lô, mỗi lô $B$ điểm, và với mỗi lô
+      tối ưu
+      \begin{equation}\label{eq:ca_loss}
+      \mathcal L_{CA}=-\frac1B\sum_{(\tilde\vf,c)\in\text{lô}}\log\frac{\exp\big(\sigma\cos(\vw_c,\tilde\vf)\big)}
+      {\sum_{j=1}^{C}\exp\big(\sigma\cos(\vw_j,\tilde\vf)\big)}
+      \end{equation}
+      theo $\{\vw_j\}$, bằng SGD (momentum 0.9, tốc độ học giảm theo cosine qua 10 epoch). Chỉ head được cập nhật;
+      adapter giữ nguyên.
+\end{enumerate}
+Sau CA, dự đoán theo \eqref{eq:pred}.
+
+\paragraph{Hai siêu tham số của CA.}
+\begin{itemize}
+\item $s$ (độ nới): $s=1$ dùng đúng $\Sz_c$; $s>1$ làm đám mây rộng hơn, head học biên rộng hơn quanh mỗi lớp. Vai trò
+      tương tự $\kappa_c$: bù cho việc bộ nhớ chưa phản ánh đủ độ bất định của lớp.
+\item $B$ (số điểm mỗi lớp mỗi epoch): gradient của $\mathcal L_{CA}$ là ước lượng Monte Carlo trên các điểm giả; $B$
+      lớn hơn thì ước lượng ít nhiễu hơn, nhất là khi đám mây rộng.
+\end{itemize}
+Mặc định $s=1$, $B=256$ (như RSIAT). Bản chính trên ImageNet-A dùng $s=2$, $B=1024$, chọn trên seed 1993
+(mục~\ref{sec:grid}).
+
+\subsection{Chi phí}
+\begin{itemize}
+\item \textbf{Bộ nhớ:} mỗi lớp một vector 768 chiều và một ma trận $768\times768$ ở tầng $\vz$, cùng cỡ với thống kê mà
+      RSIAT lưu ở $\vf$; pipeline không cần thống kê nào ở $\vf$. (Mã hiện tại vẫn tính thêm thống kê ở $\vf$ để chẩn
+      đoán; chúng không được dùng cho CA và không ảnh hưởng kết quả.) Không lưu ảnh, không thêm tham số huấn luyện.
+\item \textbf{Tính toán:} bước 2 thêm một lượt cho ảnh lớp mới qua hai mô hình và một SVD $768\times768$. Bước 4, mỗi
+      epoch, đẩy $C\cdot B$ vector qua MLP và adapter của một khối (chia cụm để tiết kiệm bộ nhớ GPU), cộng $C$ phân rã
+      Cholesky. Với $B=256$, CA ở bước cuối của ImageNet-A mất khoảng 7 giây; chi phí tăng tuyến tính theo $B$. Huấn
+      luyện adapter vẫn chiếm phần lớn thời gian.
+\end{itemize}
+
+% =====================================================================================================================
+\section{Điểm khác so với các phương pháp trước}\label{sec:diff}
+
+\begin{table}[H]
+\centering\small
+\caption{So sánh theo bốn câu hỏi: lưu gì, ở đâu; bù trôi thế nào; dữ liệu cho CA tạo ra thế nào; có lưu ảnh không.}
+\label{tab:diff}
+\begin{tabular}{p{2.5cm}p{3.0cm}p{3.2cm}p{4.2cm}p{1.2cm}}
+\toprule
+Phương pháp & Bộ nhớ lớp cũ & Bù trôi & Dữ liệu cho CA & Lưu ảnh\\
+\midrule
+L2P / DualPrompt / CODA-P \cite{l2p,dualprompt,codaprompt} & prompt + khoá & không (backbone đóng băng) & không có CA &
+không\\
+ADAM / APER \cite{aper} & prototype ở $\vf$ & không cần (đóng băng sau bước đầu) & không có CA & không\\
+SLCA \cite{slca} & Gauss ở $\vf$ & không & Gauss ở $\vf$ & không\\
+SSIAT, RSIAT \cite{ssiat,rsiat} & Gauss ở $\vf$ & SDC: dịch trung bình ở $\vf$ & Gauss ở $\vf$ & không\\
+ADC / LDC \cite{adc,ldc} & Gauss / prototype ở $\vf$ & mẫu đối kháng / bộ chiếu học được, ở $\vf$ & Gauss ở $\vf$ &
+không\\
+\textbf{LBR} & Gauss ở $\vz$, hình dạng vay lớp gần & quay + tịnh tiến ở $\vz$, cả trung bình \emph{và} hiệp phương
+sai & \textbf{$\vz$ giả qua khối cuối hiện tại}: phi tuyến, khớp adapter hiện tại & không\\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\begin{enumerate}
+\item \textbf{Vị trí bộ nhớ.} Mọi phương pháp phát lại thống kê đã công bố đều lưu ở $\vf$. LBR lưu ở $\vz$, tầng sớm
+      nhất mà từ đó vẫn tái tạo được $\vf$ chính xác chỉ từ một vector.
+\item \textbf{Dữ liệu giả do mạng thật tạo ra.} $\tilde\vf=h_{\theta_t}(\vz)$ là đầu ra của chính khối cuối hiện tại,
+      mang cấu trúc phi tuyến của mạng, không bị giả định là Gauss ở $\vf$.
+\item \textbf{Phần trôi của khối cuối được tính chính xác.} Mọi thay đổi của adapter khối cuối phản ánh trực tiếp trong
+      $\tilde\vf$. Bộ bám trôi chỉ còn phải lo phần trôi của khối 1..11 ở $\vz$; SDC, ADC, LDC phải ước lượng toàn bộ độ
+      trôi ở $\vf$.
+\item \textbf{Cập nhật cả hình dạng.} SDC chỉ dịch trung bình. LBR xoay cả hiệp phương sai theo hệ toạ độ mới, và vay
+      hình dạng từ lớp gần nhất khi số ảnh quá ít.
+\end{enumerate}
+LBR là thay đổi cục bộ: không đổi kiến trúc, không thêm tham số, và có thể cắm vào mọi phương pháp adapter có bước CA dựa
+trên thống kê.
+
+% =====================================================================================================================
+\section{Thực nghiệm trên ImageNet-A}\label{sec:exp}
+
+\subsection{Thiết lập}
+\begin{itemize}
+\item \textbf{Dữ liệu:} ImageNet-A, 200 lớp, 10 bước $\times$ 20 lớp, khoảng 30 ảnh huấn luyện mỗi lớp.
+\item \textbf{Backbone:} ViT-B/16 tiền huấn luyện ImageNet-21K, adapter song song 64 chiều ở mọi khối, như RSIAT.
+\item \textbf{Seed:} 1993, 1994, 1995. Seed quyết định thứ tự lớp, nên mỗi seed là một chuỗi bài toán khác nhau.
+\item \textbf{RSIAT gốc:} chạy lại bằng mã và cấu hình chính thức (\texttt{exps/adapter\_imageneta.json}), cùng máy,
+      cùng seed. LBR giữ mọi siêu tham số huấn luyện của RSIAT, trừ $\lambda_{RS}=\gamma=0$.
+\item \textbf{Chọn siêu tham số:} chỉ $s$ và $B$ của CA, trên seed 1993, theo Avg. Seed 1994 và 1995 không được dùng
+      để chọn.
+\end{itemize}
+
+\subsection{Kết quả chính}
+
+\begin{table}[H]
+\centering\small
+\caption{ImageNet-A, Avg / Last (\%). Trung bình $\pm$ độ lệch chuẩn qua 3 seed. $\Delta$: chênh lệch so với RSIAT gốc
+trên cùng seed.}
+\label{tab:main}
+\footnotesize
+\setlength{\tabcolsep}{3pt}
+\begin{tabular}{lcccc}
+\toprule
+Phương pháp & Seed 1993 & Seed 1994 & Seed 1995 & \textbf{Trung bình}\\
+\midrule
+RSIAT gốc \cite{rsiat} & 74.76 / 65.77 & 72.18 / 63.99 & 71.10 / 65.31 & 72.68$\pm$1.54 / 65.02$\pm$0.75\\
+LBR, mặc định ($s{=}1$, $B{=}256$) & 75.32 / 66.03 & 72.70 / 64.45 & 70.93 / 64.78 & 72.98$\pm$1.80 / 65.09$\pm$0.68\\
+\textbf{LBR} ($s{=}2$, $B{=}1024$) & \textbf{75.60 / 66.43} & \textbf{73.22 / 64.98} & 70.97 / \textbf{65.44} &
+\textbf{73.26$\pm$1.89 / 65.62$\pm$0.60}\\
+\midrule
+$\Delta$ LBR mặc định & $+0.56$ / $+0.26$ & $+0.52$ / $+0.46$ & $-0.17$ / $-0.53$ & $+0.30$ / $+0.06$\\
+$\Delta$ \textbf{LBR} & $+0.84$ / $+0.66$ & $+1.03$ / $+0.99$ & $-0.13$ / $+0.13$ & $\mathbf{+0.58}$ / $\mathbf{+0.59}$\\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\begin{itemize}
+\item LBR hơn RSIAT gốc $+0.58$ Avg và $+0.59$ Last. \textbf{Last cao hơn ở cả 3/3 seed}; Avg cao hơn ở 2/3 seed, riêng
+      seed 1995 thấp hơn $0.13$.
+\item Trên hai seed không dùng để chọn $s,B$ (1994, 1995), Last vẫn hơn $+0.99$ và $+0.13$; Avg $+1.03$ và $-0.13$.
+\item Độ lệch chuẩn giữa các seed ($\approx1.5$--$1.9$ Avg) lớn hơn mức tăng, vì mỗi thứ tự lớp có độ khó khác nhau. So
+      sánh theo cặp trên cùng seed ổn định hơn: trong 27 cặp (3 seed $\times$ 9 bước có CA), LBR cao hơn ở
+      \textbf{22/27}.
+\item Bản mặc định chỉ hơn $+0.30$ Avg và gần bằng ở Last: nới đám mây và bốc nhiều điểm hơn là cần thiết
+      (mục~\ref{sec:grid}).
+\end{itemize}
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}
+\begin{axis}[width=0.92\linewidth,height=6.2cm,xlabel={Bước},ylabel={Độ chính xác (\%), TB 3 seed},xtick={0,...,9},
+ ymin=63,ymax=86,grid=major,grid style={black!12},legend style={at={(0.02,0.03)},anchor=south west,font=\small}]
+\addplot[cOrig,thick,mark=o] coordinates {(0,83.99)(1,78.08)(2,76.71)(3,74.16)(4,72.77)(5,71.65)(6,69.87)(7,68.46)(8,66.10)(9,65.02)};
+\addlegendentry{RSIAT gốc}
+\addplot[cLBR,very thick,mark=triangle*] coordinates {(0,84.03)(1,78.92)(2,76.40)(3,75.74)(4,73.56)(5,72.16)(6,70.66)(7,69.02)(8,66.52)(9,65.62)};
+\addlegendentry{LBR ($s{=}2$, $B{=}1024$)}
+\end{axis}
+\end{tikzpicture}
+\caption{Độ chính xác theo bước, trung bình 3 seed. Chênh lệch LBR $-$ RSIAT gốc theo bước:
+$+0.04, +0.84, -0.31, +1.58, +0.79, +0.52, +0.79, +0.56, +0.43, +0.59$. Ở bước 0, khác biệt duy nhất là LBR không dùng
+$\mathcal{L}_{RS}$.}
+\label{fig:curve}
+\end{figure}
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}
+\begin{axis}[ybar,bar width=10pt,width=0.7\linewidth,height=5cm,ylabel={LBR $-$ RSIAT gốc (điểm)},
+ symbolic x coords={1993,1994,1995,TB},xtick=data,ymin=-0.4,ymax=1.2,grid=major,grid style={black!12},
+ legend style={at={(0.98,0.97)},anchor=north east,font=\small},enlarge x limits=0.18]
+\addplot[fill=cLBR!60] coordinates {(1993,0.84)(1994,1.03)(1995,-0.13)(TB,0.58)};
+\addlegendentry{Avg}
+\addplot[fill=cPos!60] coordinates {(1993,0.66)(1994,0.99)(1995,0.13)(TB,0.59)};
+\addlegendentry{Last}
+\end{axis}
+\end{tikzpicture}
+\caption{Chênh lệch theo từng seed. Last dương ở mọi seed.}
+\label{fig:bar}
+\end{figure}
+
+\subsection{Lớp cũ và lớp mới ở bước cuối}
+\begin{table}[H]
+\centering\small
+\caption{Bước 9, trung bình 3 seed: độ chính xác trên 180 lớp cũ và 20 lớp mới.}
+\label{tab:oldnew}
+\begin{tabular}{lccc}
+\toprule
+Phương pháp & Tổng (Last) & Lớp cũ & Lớp mới\\
+\midrule
+RSIAT gốc & 65.02 & 64.60 & 68.88\\
+\textbf{LBR} ($s{=}2$, $B{=}1024$) & \textbf{65.62} & \textbf{65.27} & \textbf{68.90}\\
+\bottomrule
+\end{tabular}
+\end{table}
+Toàn bộ mức tăng ở bước cuối nằm ở \textbf{lớp cũ} ($+0.67$); lớp mới giữ nguyên. LBR giảm quên mà không đánh đổi khả
+năng học lớp mới.
+
+\subsection{Tham khảo với các phương pháp đã công bố}
+\begin{table}[H]
+\centering\small
+\caption{ImageNet-A, 10 bước, ViT-B/16-IN21K, Avg / Last. Các dòng phía trên trích nguyên văn từ Bảng 1 của SSIAT
+\cite{ssiat} (seed 1993, 1996, 1997). Hai dòng cuối là của chúng tôi (seed 1993, 1994, 1995). Seed khác nhau thì thứ tự
+lớp khác nhau, nên bảng này chỉ để tham khảo; so sánh chặt chẽ là Bảng~\ref{tab:main}.}
+\label{tab:published}
+\begin{tabular}{llcc}
+\toprule
+Nhóm & Phương pháp & Avg & Last\\
+\midrule
+Prompt & L2P \cite{l2p} & 51.24$\pm$2.26 & 44.04$\pm$0.93\\
+ & DualPrompt \cite{dualprompt} & 64.59$\pm$0.08 & 53.19$\pm$0.74\\
+ & CODA-Prompt \cite{codaprompt} & 63.92$\pm$0.12 & 52.08$\pm$0.12\\
+PET đa dụng & LAE \cite{lae} & 58.15$\pm$0.73 & 47.18$\pm$1.17\\
+ & ADA \cite{ada} & 59.43$\pm$2.20 & 50.16$\pm$0.20\\
+Đóng băng + prototype & ADAM-adapter \cite{aper} & 58.84$\pm$1.37 & 48.81$\pm$0.08\\
+Phát lại thống kê & SLCA \cite{slca} & 68.88$\pm$2.31 & 61.05$\pm$0.63\\
+ & SSIAT \cite{ssiat} & 70.83$\pm$1.63 & 62.43$\pm$1.63\\
+\midrule
+\multicolumn{4}{l}{\emph{Chúng tôi chạy (seed 1993, 1994, 1995)}}\\
+ & RSIAT gốc \cite{rsiat} & 72.68$\pm$1.54 & 65.02$\pm$0.75\\
+ & \textbf{LBR} & \textbf{73.26$\pm$1.89} & \textbf{65.62$\pm$0.60}\\
+\bottomrule
+\end{tabular}
+\end{table}
+Chúng tôi không trích được bảng của bài RSIAT (máy chủ CVF chặn truy cập tự động), nên dòng RSIAT là số chạy lại.
+
+% =====================================================================================================================
+\section{Phân tích: mức tăng đến từ đâu}\label{sec:ablation}
+
+\subsection{Chỉ thay dữ liệu cho CA, trên cùng một backbone}\label{sec:offline}
+Câu hỏi then chốt: phát lại qua khối cuối (bước 4) có tốt hơn Gauss ở $\vf$ không, khi mọi thứ khác giữ nguyên? Ở các
+run thật, head sau CA của bước này được dùng tiếp ở bước sau, nên chênh lệch giữa hai run lẫn với nhiễu tích luỹ. Vì
+vậy chúng tôi lưu adapter, head trước CA và mọi thống kê ở từng bước của run LBR seed 1993, rồi chạy lại \emph{chỉ bước
+CA} với các loại dữ liệu khác nhau: cùng adapter, cùng khởi tạo head, 3 seed CA. Nhánh LBR với seed CA 0 tái tạo đúng
+từng con số của run thật, xác nhận cách đo là chính xác.
+
+\begin{table}[H]
+\centering\small
+\caption{Backbone cố định (seed 1993), trung bình 3 seed CA, $s=1$, $B=256$. Avg tính trên bước 1--9. ``Gauss ở
+$\vf$'': thống kê ở $\vf$ được bám trôi bằng cùng thuật toán của bước 2, CA như RSIAT.}
+\label{tab:offline}
+\begin{tabular}{lccc}
+\toprule
+Dữ liệu cho CA & Avg (1--9) & Last & $\Delta$Avg so với Gauss ở $\vf$\\
+\midrule
+Gauss ở $\vf$ (cách của SLCA / SSIAT / RSIAT) & 73.72 & 66.05 & --\\
+Bộ nhớ ở $\vz$, đẩy qua khối cuối rồi khớp lại một Gauss ở $\vf$ & 73.97 & 66.34 & $+0.25$\\
+\textbf{Đẩy qua khối cuối (LBR)} & \textbf{74.16} & 66.16 & $\mathbf{+0.43}$ (từng seed $+0.29, +0.54, +0.46$)\\
+Đẩy qua khối cuối, không $\kappa$ & 73.90 & 66.10 & $+0.18$\\
+\bottomrule
+\end{tabular}
+\end{table}
+\begin{itemize}
+\item Chỉ thay dữ liệu cho CA, LBR hơn Gauss ở $\vf$ $+0.43$ Avg, dương ở cả 3 seed CA.
+\item Phần lợi gồm hai nửa cỡ ngang nhau. \emph{Vị trí bộ nhớ}: $+0.25$, đo bằng cách đẩy qua khối cuối rồi ép lại thành
+      Gauss ở $\vf$ (giữ trung bình, hiệp phương sai, bỏ hình dạng). \emph{Hình dạng không Gauss do mạng tạo ra}: thêm
+      $+0.18$.
+\item Bỏ $\kappa$ mất $0.26$ Avg: dời theo $\kappa$ vẫn cần thiết khi phát lại qua khối cuối.
+\end{itemize}
+
+\subsection{Bỏ từng phần, chạy thật trên 3 seed}
+\begin{table}[H]
+\centering\small
+\caption{ImageNet-A, trung bình 3 seed. Dòng 2: LBR với bước 3--4 được thay bằng CA Gauss ở $\vf$ như RSIAT (thống kê ở
+$\vf$ được bám trôi bằng thuật toán của bước 2, hiệp phương sai mẫu).}
+\label{tab:abl3}
+\begin{tabular}{lcccc}
+\toprule
+Cấu hình & Avg & Last & $\Delta$Avg & $\Delta$Last\\
+\midrule
+RSIAT gốc & 72.68 & 65.02 & -- & --\\
+LBR, thay bước 3--4 bằng CA Gauss ở $\vf$ & 72.82 & 65.61 & $+0.14$ & $+0.59$\\
+LBR mặc định ($s{=}1$, $B{=}256$) & 72.98 & 65.09 & $+0.30$ & $+0.06$\\
+\textbf{LBR} ($s{=}2$, $B{=}1024$) & \textbf{73.26} & \textbf{65.62} & $\mathbf{+0.58}$ & $\mathbf{+0.59}$\\
+\bottomrule
+\end{tabular}
+\end{table}
+\begin{itemize}
+\item Bỏ $\mathcal L_{RS},\mathcal L_{orth}$ và thay SDC bằng bám trôi (bước 1--2) cho gần như toàn bộ mức tăng
+      \emph{Last} ($+0.59$, dương ở cả 3 seed: $+0.52, +0.59, +0.65$) nhưng chỉ $+0.14$ Avg.
+\item Bộ nhớ ở $\vz$ và phát lại qua khối cuối (bước 3--4, $s{=}2$, $B{=}1024$) thêm $+0.44$ Avg, giữ nguyên Last. Phần
+      lợi nằm ở bước 1--7 (lớn nhất ở bước 1, 3, 4: $+1.02$, $+1.46$, $+0.92$); ở bước 8--9 gần như bằng.
+\item Hai phần bổ sung cho nhau: bám trôi giữ thống kê của lớp cũ đúng chỗ đến cuối chuỗi; phát lại qua khối cuối làm dữ
+      liệu cho CA sát đặc trưng thật hơn ở từng bước.
+\end{itemize}
+
+\subsection{Vay hình dạng và $\kappa$ (chạy thật, seed 1993)}
+\begin{table}[H]
+\centering\small
+\caption{Seed 1993, Avg / Last. Mọi dòng có cùng bước 1--2.}
+\label{tab:abl1}
+\begin{tabular}{lcc}
+\toprule
+Cấu hình & Avg & Last\\
+\midrule
+RSIAT gốc & 74.76 & 65.77\\
+CA Gauss ở $\vf$, hiệp phương sai mẫu & 75.03 & 66.29\\
+CA Gauss ở $\vf$, hiệp phương sai vay \eqref{eq:borrow} & 75.06 & 66.10\\
+Đẩy qua khối cuối, hiệp phương sai mẫu (không vay) & 75.00 & 65.90\\
+Đẩy qua khối cuối, vay, không $\kappa$ & 75.11 & 66.03\\
+Đẩy qua khối cuối, vay, có $\kappa$ (LBR mặc định) & 75.32 & 66.03\\
+Như trên, $s{=}2$, $B{=}1024$ (\textbf{LBR}) & \textbf{75.60} & \textbf{66.43}\\
+\bottomrule
+\end{tabular}
+\end{table}
+\begin{itemize}
+\item \textbf{Phát lại qua khối cuối cần hình dạng vay.} Với hiệp phương sai mẫu, đám mây ở $\vz$ là tấm phẳng 29 chiều;
+      đẩy nó qua khối cuối không thêm thông tin ($75.00$, không hơn CA Gauss ở $\vf$). Khi đám mây có đủ chiều nhờ vay,
+      phát lại qua khối cuối hơn CA ở $\vf$ cùng hiệp phương sai vay $+0.26$ Avg ($75.32$ so với $75.06$).
+\item \textbf{$\kappa$ cần thiết:} bỏ $\kappa$ mất $0.21$ Avg, cùng chiều với Bảng~\ref{tab:offline}.
+\item Chênh lệch giữa các dòng của một seed cỡ $0.1$--$0.3$, xấp xỉ nhiễu của CA; vì vậy phép đo trên backbone cố định
+      (Bảng~\ref{tab:offline}) là bằng chứng đáng tin hơn.
+\end{itemize}
+
+\subsection{Quét $s$ và $B$ (seed 1993)}\label{sec:grid}
+\begin{table}[H]
+\centering\small
+\caption{LBR trên seed 1993, chạy thật, Avg / Last. RSIAT gốc: $74.76 / 65.77$.}
+\label{tab:grid}
+\begin{tabular}{lcc}
+\toprule
+& $B=256$ & $B=1024$\\
+\midrule
+$s=1$ & 75.32 / 66.03 & 75.40 / 66.16\\
+$s=1.5$ & 75.55 / 66.29 & 75.60 / 66.36\\
+$s=2$ & 75.47 / \textbf{66.56} & \textbf{75.60} / 66.43\\
+\bottomrule
+\end{tabular}
+\end{table}
+Cả 6 cấu hình đều hơn RSIAT gốc ($+0.56$ đến $+0.84$ Avg; $+0.26$ đến $+0.79$ Last), nên LBR không nhạy với lựa chọn
+$s,B$. Nới đám mây ($s>1$) giúp, nhất là ở Last; đây là kết quả thực nghiệm, chúng tôi chưa có giải thích đầy đủ (phép
+đo ở mục~\ref{sec:fid} cho thấy ảnh huấn luyện \emph{không} co cụm hơn ảnh kiểm tra). Tăng $B$ giúp khi đám mây rộng,
+đúng như ước lượng Monte Carlo cần nhiều điểm hơn khi phương sai lớn; với $s=1$, tăng $B$ chỉ thêm $+0.08$ Avg.
+
+\subsection{Dữ liệu giả có khớp đặc trưng thật hơn không}\label{sec:fid}
+So ba đám mây giả của lớp cũ với đặc trưng thật dưới mô hình hiện tại, trên $\vf$ đã chuẩn hoá (hình học mà head cosine
+dùng), bằng khoảng cách năng lượng \cite{energy}
+\[
+\mathcal E(P,Q)=2\,\mathbb E\|X-Y\|-\mathbb E\|X-X'\|-\mathbb E\|Y-Y'\|,\qquad X,X'\sim P,\ Y,Y'\sim Q,
+\]
+bằng 0 khi và chỉ khi hai phân phối trùng nhau. Trung bình qua mọi lớp cũ và bước 1--9 (seed 1993):
+\begin{table}[H]
+\centering\small
+\caption{Khoảng cách năng lượng giữa dữ liệu giả và đặc trưng thật của lớp cũ (càng nhỏ càng khớp).}
+\label{tab:fid}
+\begin{tabular}{lcc}
+\toprule
+Dữ liệu giả & So với ảnh \emph{kiểm tra} lớp cũ & So với ảnh \emph{huấn luyện} lớp cũ\\
+\midrule
+Gauss ở $\vf$ & 0.2162 & \textbf{0.0320}\\
+Đẩy qua khối cuối rồi khớp lại Gauss & 0.2086 & 0.0449\\
+\textbf{Đẩy qua khối cuối (LBR)} & \textbf{0.2070} & 0.0431\\
+\bottomrule
+\end{tabular}
+\end{table}
+\begin{itemize}
+\item \textbf{So với ảnh kiểm tra}, tức phân phối mà bộ phân loại phải đối mặt, dữ liệu giả của LBR khớp hơn Gauss ở
+      $\vf$ ở \emph{cả 9/9 bước}. Mức cải thiện nhỏ (khoảng 4\%) nhưng nhất quán.
+\item \textbf{So với ảnh huấn luyện}, Gauss ở $\vf$ khớp hơn. Điều này dự kiến được: Gauss ở $\vf$ ước lượng từ chính
+      các ảnh đó, còn LBR vay hình dạng của lớp gần nhất nên rộng hơn.
+\item Tỉ số phân tán kiểm tra/huấn luyện quanh trung bình lớp là $\approx1.01$--$1.02$ ở cả $\vz$ và $\vf$: ảnh huấn
+      luyện không co cụm hơn ảnh kiểm tra ở tầng nào. Lợi ích của LBR không đến từ chỗ $\vz$ ít co cụm hơn, mà từ vị trí
+      bộ nhớ và việc dùng chính khối cuối để tạo dữ liệu giả.
+\end{itemize}
+
+% =====================================================================================================================
+\section{VTAB và CUB}\label{sec:more}
+Quy trình giống ImageNet-A: (1) chạy LBR mặc định trên seed 1993; (2) chọn $s,B$ trên backbone cố định của run đó
+(mục~\ref{sec:offline}), trung bình 3 seed CA; (3) chạy thật bản đã chọn trên seed 1993, 1994, 1995; (4) so với RSIAT
+gốc cùng seed. Siêu tham số huấn luyện lấy theo cấu hình RSIAT của từng dataset.
+
+\subsection{VTAB}
+50 lớp, 5 bước $\times$ 10 lớp, mỗi bước là một miền ảnh khác. Thứ tự lớp cố định (\texttt{shuffle=false}), nên seed gần
+như không đổi bài toán, chỉ đổi nhiễu huấn luyện.
+
+\begin{table}[H]
+\centering\small
+\caption{VTAB, chọn $s,B$ trên backbone cố định của run LBR mặc định seed 1993, trung bình 3 seed CA, Avg (cả 5 bước) /
+Last.}
+\label{tab:vtab_grid}
+\begin{tabular}{lcc}
+\toprule
+& $B=256$ & $B=1024$\\
+\midrule
+$s=1$ & 94.86 / 94.78 & 94.84 / 94.78\\
+$s=1.5$ & 94.97 / 94.96 & 94.96 / 94.96\\
+$s=2$ & \textbf{95.01 / 95.08} & 94.98 / 95.02\\
+\bottomrule
+\end{tabular}
+\end{table}
+Cùng xu hướng với ImageNet-A: $s>1$ giúp. Cấu hình được chọn: $s=2$, $B=256$.
+
+\begin{table}[H]
+\centering\small
+\caption{VTAB seed 1993, độ chính xác theo bước và Avg / Last (\%).}
+\label{tab:vtab}
+\begin{tabular}{lccccc|c}
+\toprule
+Phương pháp & 0 & 1 & 2 & 3 & 4 & Avg / Last\\
+\midrule
+RSIAT gốc & 96.70 & 93.93 & 94.00 & 94.27 & 94.69 & 94.72 / 94.69\\
+LBR mặc định ($s{=}1$, $B{=}256$) & 96.90 & 94.07 & 94.34 & 94.27 & 94.79 & 94.87 / 94.79\\
+\textbf{LBR} ($s{=}2$, $B{=}256$) & 96.90 & 93.86 & 94.38 & 94.61 & 95.10 & \textbf{94.97 / 95.10}\\
+\bottomrule
+\end{tabular}
+\end{table}
+\begin{itemize}
+\item LBR hơn RSIAT gốc $+0.25$ Avg và $+0.41$ Last trên seed 1993. Run thật khớp đúng dự đoán từ backbone cố định
+      (seed CA 0: $93.86, 94.38, 94.61, 95.10$).
+\item $s,B$ được chọn trên chính seed này, nên con số trên lạc quan. Seed 1994, 1995 đang chạy. Vì thứ tự lớp cố định,
+      chúng kiểm tra độ ổn định với nhiễu huấn luyện, \emph{không} phải với thứ tự lớp mới.
+\item RSIAT gốc trên seed 1994, 1995: $94.86/94.74$ và $94.75/94.80$. Tham khảo từ SSIAT \cite{ssiat} (Bảng 3, Avg / bước
+      cuối): SLCA $93.82/94.33$, SSIAT $94.21/94.50$.
+\end{itemize}
+
+\subsection{CUB-200}
+200 lớp, 20 bước $\times$ 10 lớp. RSIAT gốc seed 1993: $93.93/90.37$ (đường do tác giả cung cấp; 15 bước đầu khớp đúng
+run của chúng tôi). Bảng 1 của SSIAT dùng 10 bước nên không so trực tiếp được.
+
+\begin{table}[H]
+\centering\footnotesize
+\setlength{\tabcolsep}{3.5pt}
+\caption{CUB seed 1993, LBR mặc định đang chạy: độ chính xác theo bước, 13 bước đầu (\%). Chưa đủ để kết luận.}
+\label{tab:cub_partial}
+\begin{tabular}{lccccccccccccc}
+\toprule
+Bước & 0 & 1 & 2 & 3 & 4 & 5 & 6 & 7 & 8 & 9 & 10 & 11 & 12\\
+\midrule
+RSIAT gốc & 100.0 & 98.79 & 98.55 & 98.02 & 97.50 & 95.24 & 93.70 & 94.23 & 93.82 & 93.27 & 93.40 & 92.58 & 91.79\\
+LBR mặc định & 100.0 & 98.79 & 98.55 & 98.02 & 97.68 & 95.24 & 94.34 & 94.56 & 94.20 & 93.60 & 93.40 & 92.51 & 92.12\\
+\bottomrule
+\end{tabular}
+\end{table}
+Đến bước 12, LBR bằng hoặc cao hơn RSIAT gốc ở 12/13 bước. Kết quả đủ 20 bước, bước chọn $s,B$, và 3 seed sẽ được bổ
+sung khi các run hoàn tất.
+
+% =====================================================================================================================
+\section{Giới hạn}
+\begin{itemize}
+\item \textbf{Mức tăng vừa phải:} $+0.58$ Avg, $+0.59$ Last trên ImageNet-A. Hướng của mức tăng nhất quán (Last 3/3
+      seed, 22/27 cặp seed--bước), nhưng biên độ nhỏ hơn độ lệch giữa các thứ tự lớp.
+\item \textbf{Chọn $s,B$ trên seed 1993}, vốn nằm trong trung bình 3 seed. Trên hai seed còn lại, Avg là $+1.03$ và
+      $-0.13$.
+\item \textbf{Nguồn của mức tăng Last} là bước 1--2 (bỏ hai hàm mất phụ, bám trôi); phát lại qua khối cuối chủ yếu tăng
+      Avg.
+\item \textbf{Giả định Gauss vẫn còn}, chỉ được dời từ $\vf$ về $\vz$. Phần trôi của khối 1..11 vẫn phải ước lượng
+      (bước 2).
+\item \textbf{Chưa đủ dataset:} VTAB mới có seed 1993, CUB đang chạy.
+\end{itemize}
+
+% =====================================================================================================================
+\section{Kết luận}
+Nút thắt của các phương pháp phát lại thống kê (SLCA, SSIAT, RSIAT) là bộ nhớ đặt ở đầu ra $\vf$, buộc phải giả định đặc
+trưng lớp cũ là Gauss và độ trôi là tuyến tính trên $\vf$, trong khi $\vf$ là đầu ra phi tuyến của khối cuối mà adapter
+thay đổi ở mọi bước. LBR dời bộ nhớ về $\vz$, tầng sớm nhất mà từ đó vẫn tái tạo được $\vf$ chính xác; bám trôi cho cả
+trung bình lẫn hiệp phương sai bằng phép quay và tịnh tiến; vay hình dạng từ lớp gần nhất; và tạo dữ liệu cho CA bằng
+chính khối cuối hiện tại. Không lưu ảnh và không thêm tham số, LBR đạt $73.26/65.62$ trên ImageNet-A, hơn RSIAT gốc
+$+0.58$ Avg và $+0.59$ Last, Last cao hơn ở mọi seed. Trên cùng một backbone, riêng việc phát lại qua khối cuối hơn
+Gauss ở $\vf$ $+0.43$ Avg ở cả 3 seed CA.
+
+\paragraph{Mã và cấu hình.} \texttt{models/lbr.py} (\texttt{xprime}: tính $\vz$; \texttt{head\_from\_xprime}: $h_\theta$;
+\texttt{train\_ca\_push}: bước 4); \texttt{models/RSIAT\_adapter.py} (\texttt{\_lbr\_class\_stats}: bước 3;
+\texttt{\_ca\_xprime}: gọi bước 4); \texttt{models/sts.py} (bước 2); \texttt{models/hrc.py::fixed\_shapes} và
+\texttt{models/v3stats.py} (vay hình dạng, công thức~\eqref{eq:borrow}); cấu hình trong \texttt{exps/lbr2/}; đo trên
+backbone cố định: \texttt{exps/lbr2/offline.py}, \texttt{exps/lbr2/tune\_offline.py}.
+
+\begin{thebibliography}{99}
+\bibitem{vit} A. Dosovitskiy et al. An Image is Worth 16x16 Words: Transformers for Image Recognition at Scale.
+  \emph{ICLR}, 2021.
+\bibitem{l2p} Z. Wang et al. Learning to Prompt for Continual Learning. \emph{CVPR}, 2022.
+\bibitem{dualprompt} Z. Wang et al. DualPrompt: Complementary Prompting for Rehearsal-free Continual Learning.
+  \emph{ECCV}, 2022.
+\bibitem{codaprompt} J. S. Smith et al. CODA-Prompt: COntinual Decomposed Attention-based Prompting for Rehearsal-Free
+  Continual Learning. \emph{CVPR}, 2023.
+\bibitem{adaptformer} S. Chen et al. AdaptFormer: Adapting Vision Transformers for Scalable Visual Recognition.
+  \emph{NeurIPS}, 2022.
+\bibitem{aper} D.-W. Zhou, Z.-W. Cai, H.-J. Ye, D.-C. Zhan, Z. Liu. Revisiting Class-Incremental Learning with
+  Pre-Trained Models: Generalizability and Adaptivity are All You Need. \emph{IJCV}, 2024 (arXiv:2303.07338).
+\bibitem{lae} Q. Gao et al. A Unified Continual Learning Framework with General Parameter-Efficient Tuning. \emph{ICCV},
+  2023 (arXiv:2303.10070).
+\bibitem{ada} B. Ermis et al. Memory Efficient Continual Learning with Transformers. \emph{NeurIPS}, 2022.
+\bibitem{slca} G. Zhang, L. Wang, G. Kang, L. Chen, Y. Wei. SLCA: Slow Learner with Classifier Alignment for Continual
+  Learning on a Pre-trained Model. \emph{ICCV}, 2023.
+\bibitem{ssiat} Y. Tan, Q. Zhou, X. Xiang, K. Wang, Y. Wu, Y. Li. Semantically-Shifted Incremental Adapter-Tuning is A
+  Continual ViTransformer. \emph{CVPR}, 2024.
+\bibitem{rsiat} J. Zhao, L. Huang, X. Li, Z. An, C. Yang, Y. Wang, B. Diao, Y. Xu. Representation-Steered Incremental
+  Adapter-Tuning for Class-Incremental Learning with Pre-Trained Models. \emph{CVPR}, 2026.
+\bibitem{sdc} L. Yu et al. Semantic Drift Compensation for Class-Incremental Learning. \emph{CVPR}, 2020.
+\bibitem{adc} D. Goswami, A. Soutif-Cormerais, Y. Liu, S. Kamath, B. Twardowski, J. van de Weijer. Resurrecting Old
+  Classes with New Data for Exemplar-Free Continual Learning. \emph{CVPR}, 2024.
+\bibitem{ldc} A. Gomez-Villa, D. Goswami, K. Wang, A. D. Bagdanov, B. Twardowski, J. van de Weijer. Exemplar-free
+  Continual Representation Learning via Learnable Drift Compensation. \emph{ECCV}, 2024.
+\bibitem{cosface} H. Wang et al. CosFace: Large Margin Cosine Loss for Deep Face Recognition. \emph{CVPR}, 2018.
+\bibitem{freelunch} S. Yang, L. Liu, M. Xu. Free Lunch for Few-shot Learning: Distribution Calibration. \emph{ICLR},
+  2021.
+\bibitem{energy} G. J. Székely, M. L. Rizzo. Energy Statistics: A Class of Statistics Based on Distances. \emph{Journal
+  of Statistical Planning and Inference}, 2013.
+\end{thebibliography}
+\end{document}

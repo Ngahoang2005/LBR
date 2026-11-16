@@ -1,0 +1,6 @@
+[2026-11-16 13:02:03] start imageneta_b4_T2_a64_s1993 (lan 1, GPU trong 10315 MiB)
+[2026-11-16 13:41:56] end imageneta_b4_T2_a64_s1993 (exit 0, ok)
+[2026-11-16 13:41:56] imageneta_b4_T2_a64_s1993 Avg 75.65800000000002 Last 66.75
+[2026-11-16 13:49:28] xong b4_T2_a64_s1993 (pred: exps/claims/b3_b4_T2_a64_s1993_pred.npz)
+[2026-11-16 13:49:28] start imageneta_b4_T2_a64_s1994 (lan 1, GPU trong 10315 MiB)
+[2026-11-16 14:03:36] end imageneta_b4_T2_a64_s1994 (exit 1, KHONG_XONG: OOM)

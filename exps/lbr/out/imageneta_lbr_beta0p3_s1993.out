@@ -1,0 +1,51 @@
+2026-11-16 12:59:45,630 [trainer.py] => config: exps/lbr/imageneta_lbr_beta0p3_s1993.json
+2026-11-16 12:59:45,630 [trainer.py] => prefix: lbr_beta0p3_s1993
+2026-11-16 12:59:45,630 [trainer.py] => dataset: imageneta
+2026-11-16 12:59:45,630 [trainer.py] => shuffle: True
+2026-11-16 12:59:45,630 [trainer.py] => ssca: True
+2026-11-16 12:59:45,630 [trainer.py] => ca: True
+2026-11-16 12:59:45,630 [trainer.py] => init_cls: 20
+2026-11-16 12:59:45,630 [trainer.py] => increment: 20
+2026-11-16 12:59:45,630 [trainer.py] => model_name: adapter
+2026-11-16 12:59:45,630 [trainer.py] => convnet_type: pretrained_vit_b16_224_in21k_adapter
+2026-11-16 12:59:45,630 [trainer.py] => device: [device(type='cuda', index=0)]
+2026-11-16 12:59:45,630 [trainer.py] => seed: 1993
+2026-11-16 12:59:45,630 [trainer.py] => init_epochs: 20
+2026-11-16 12:59:45,630 [trainer.py] => warmup_epoch: 3
+2026-11-16 12:59:45,630 [trainer.py] => inc_epochs: 15
+2026-11-16 12:59:45,630 [trainer.py] => ca_epochs: 10
+2026-11-16 12:59:45,630 [trainer.py] => init_lr: 0.006688537652915857
+2026-11-16 12:59:45,630 [trainer.py] => batch_size: 48
+2026-11-16 12:59:45,630 [trainer.py] => weight_decay: 5.929828534160845e-07
+2026-11-16 12:59:45,630 [trainer.py] => min_lr: 0
+2026-11-16 12:59:45,630 [trainer.py] => ffn_num: 64
+2026-11-16 12:59:45,630 [trainer.py] => optimizer: sgd
+2026-11-16 12:59:45,630 [trainer.py] => scale: 30.0
+2026-11-16 12:59:45,630 [trainer.py] => margin: 0.3
+2026-11-16 12:59:45,630 [trainer.py] => alpha: 1.0
+2026-11-16 12:59:45,630 [trainer.py] => rs_margin: 1.5
+2026-11-16 12:59:45,630 [trainer.py] => lambda_rs: 0.0
+2026-11-16 12:59:45,630 [trainer.py] => beta: 0.3
+2026-11-16 12:59:45,630 [trainer.py] => gamma: 0.0
+2026-11-16 12:59:45,630 [trainer.py] => ae_code_dims: 128
+2026-11-16 12:59:45,630 [trainer.py] => ae_init_lr: 0.0003120779977680931
+2026-11-16 12:59:45,630 [trainer.py] => ae_weight_decay: 2.424346330636298e-05
+2026-11-16 12:59:45,630 [trainer.py] => lbr_n0: 20.0
+2026-11-16 12:59:45,630 [trainer.py] => lbr_tau: 256.0
+2026-11-16 12:59:45,630 [trainer.py] => lbr_ca_kappa: True
+2026-11-16 12:59:45,630 [trainer.py] => lbr_ca_s: 2.0
+2026-11-16 12:59:45,630 [trainer.py] => ca_samples: 1024
+2026-11-16 12:59:45,630 [trainer.py] => lbr_trunk: ae
+2026-11-16 12:59:45,630 [trainer.py] => lbr_md: 1.0
+2026-11-16 12:59:45,630 [trainer.py] => lbr_md_T: 2.0
+2026-11-16 12:59:45,641 [data_manager.py] => [168, 136, 51, 9, 183, 101, 171, 99, 42, 159, 191, 70, 16, 188, 27, 10, 175, 26, 68, 187, 98, 6, 85, 35, 112, 43, 100, 0, 103, 181, 88, 59, 4, 2, 116, 174, 94, 80, 106, 1, 147, 17, 141, 131, 72, 23, 173, 54, 197, 118, 87, 32, 79, 104, 91, 19, 135, 107, 178, 36, 11, 199, 142, 8, 122, 3, 28, 57, 153, 172, 190, 56, 49, 44, 97, 62, 151, 169, 194, 55, 192, 12, 189, 78, 66, 180, 15, 137, 109, 134, 92, 119, 126, 52, 170, 40, 148, 65, 144, 64, 138, 45, 77, 89, 154, 90, 71, 193, 74, 30, 113, 143, 96, 84, 67, 50, 186, 156, 69, 21, 18, 111, 108, 58, 125, 157, 150, 110, 182, 129, 166, 83, 81, 60, 13, 165, 14, 176, 63, 117, 5, 22, 145, 121, 38, 41, 82, 127, 114, 20, 31, 53, 37, 163, 196, 130, 152, 162, 86, 76, 24, 34, 184, 149, 33, 128, 198, 155, 146, 167, 139, 120, 140, 102, 47, 25, 158, 123, 46, 164, 61, 7, 115, 75, 133, 160, 105, 132, 179, 124, 48, 73, 93, 39, 95, 195, 29, 177, 185, 161]
+This is for the BaseNet initialization.
+I'm using ViT with adapters.
+After BaseNet initialization.
+2026-11-16 12:59:50,153 [trainer.py] => All params: 86988288
+2026-11-16 12:59:50,153 [trainer.py] => Trainable params: 1189632
+2026-11-16 12:59:50,161 [RSIAT_adapter.py] => Learning on 0-20
+The number of training dataset: 705
+2026-11-16 12:59:50,504 [toolkit.py] => All params: 86259456
+2026-11-16 12:59:50,504 [toolkit.py] => Trainable params: 1204992
+  0%|          | 0/20 [00:00<?, ?it/s]Task 0, Epoch 1/20 => Loss 9.407, Loss_c 9.407, Losses_rt 0.000, Train_accy 46.95, Test_accy 70.29:   0%|          | 0/20 [00:09<?, ?it/s]Task 0, Epoch 1/20 => Loss 9.407, Loss_c 9.407, Losses_rt 0.000, Train_accy 46.95, Test_accy 70.29:   5%|▌         | 1/20 [00:09<03:01,  9.56s/it]Task 0, Epoch 2/20 => Loss 5.551, Loss_c 5.551, Losses_rt 0.000, Train_accy 81.56, Test_accy 78.29:   5%|▌         | 1/20 [00:18<03:01,  9.56s/it]Task 0, Epoch 2/20 => Loss 5.551, Loss_c 5.551, Losses_rt 0.000, Train_accy 81.56, Test_accy 78.29:  10%|█         | 2/20 [00:18<02:47,  9.28s/it]Task 0, Epoch 3/20 => Loss 4.418, Loss_c 4.418, Losses_rt 0.000, Train_accy 89.50, Test_accy 83.43:  10%|█         | 2/20 [00:26<02:47,  9.28s/it]Task 0, Epoch 3/20 => Loss 4.418, Loss_c 4.418, Losses_rt 0.000, Train_accy 89.50, Test_accy 83.43:  15%|█▌        | 3/20 [00:26<02:29,  8.81s/it]Task 0, Epoch 4/20 => Loss 4.008, Loss_c 4.008, Losses_rt 0.000, Train_accy 90.35, Test_accy 82.86:  15%|█▌        | 3/20 [00:35<02:29,  8.81s/it]Task 0, Epoch 4/20 => Loss 4.008, Loss_c 4.008, Losses_rt 0.000, Train_accy 90.35, Test_accy 82.86:  20%|██        | 4/20 [00:35<02:21,  8.87s/it]Task 0, Epoch 5/20 => Loss 3.777, Loss_c 3.777, Losses_rt 0.000, Train_accy 90.07, Test_accy 84.57:  20%|██        | 4/20 [00:44<02:21,  8.87s/it]Task 0, Epoch 5/20 => Loss 3.777, Loss_c 3.777, Losses_rt 0.000, Train_accy 90.07, Test_accy 84.57:  25%|██▌       | 5/20 [00:44<02:12,  8.85s/it]Task 0, Epoch 6/20 => Loss 3.485, Loss_c 3.485, Losses_rt 0.000, Train_accy 92.06, Test_accy 84.57:  25%|██▌       | 5/20 [00:53<02:12,  8.85s/it]Task 0, Epoch 6/20 => Loss 3.485, Loss_c 3.485, Losses_rt 0.000, Train_accy 92.06, Test_accy 84.57:  30%|███       | 6/20 [00:53<02:04,  8.90s/it]Task 0, Epoch 7/20 => Loss 3.485, Loss_c 3.485, Losses_rt 0.000, Train_accy 91.63, Test_accy 84.57:  30%|███       | 6/20 [01:02<02:04,  8.90s/it]Task 0, Epoch 7/20 => Loss 3.485, Loss_c 3.485, Losses_rt 0.000, Train_accy 91.63, Test_accy 84.57:  35%|███▌      | 7/20 [01:02<01:54,  8.84s/it]Task 0, Epoch 8/20 => Loss 3.287, Loss_c 3.287, Losses_rt 0.000, Train_accy 92.06, Test_accy 86.29:  35%|███▌      | 7/20 [01:11<01:54,  8.84s/it]Task 0, Epoch 8/20 => Loss 3.287, Loss_c 3.287, Losses_rt 0.000, Train_accy 92.06, Test_accy 86.29:  40%|████      | 8/20 [01:11<01:46,  8.88s/it]Task 0, Epoch 9/20 => Loss 3.430, Loss_c 3.430, Losses_rt 0.000, Train_accy 90.92, Test_accy 82.86:  40%|████      | 8/20 [01:17<01:46,  8.88s/it]Task 0, Epoch 9/20 => Loss 3.430, Loss_c 3.430, Losses_rt 0.000, Train_accy 90.92, Test_accy 82.86:  45%|████▌     | 9/20 [01:17<01:29,  8.14s/it]Task 0, Epoch 10/20 => Loss 3.156, Loss_c 3.156, Losses_rt 0.000, Train_accy 92.77, Test_accy 86.29:  45%|████▌     | 9/20 [01:23<01:29,  8.14s/it]Task 0, Epoch 10/20 => Loss 3.156, Loss_c 3.156, Losses_rt 0.000, Train_accy 92.77, Test_accy 86.29:  50%|█████     | 10/20 [01:23<01:14,  7.42s/it]Task 0, Epoch 11/20 => Loss 3.104, Loss_c 3.104, Losses_rt 0.000, Train_accy 92.20, Test_accy 86.86:  50%|█████     | 10/20 [01:29<01:14,  7.42s/it]Task 0, Epoch 11/20 => Loss 3.104, Loss_c 3.104, Losses_rt 0.000, Train_accy 92.20, Test_accy 86.86:  55%|█████▌    | 11/20 [01:29<01:02,  6.93s/it]Task 0, Epoch 12/20 => Loss 3.096, Loss_c 3.096, Losses_rt 0.000, Train_accy 91.77, Test_accy 85.71:  55%|█████▌    | 11/20 [01:35<01:02,  6.93s/it]Task 0, Epoch 12/20 => Loss 3.096, Loss_c 3.096, Losses_rt 0.000, Train_accy 91.77, Test_accy 85.71:  60%|██████    | 12/20 [01:35<00:52,  6.58s/it]Task 0, Epoch 13/20 => Loss 2.889, Loss_c 2.889, Losses_rt 0.000, Train_accy 93.48, Test_accy 86.29:  60%|██████    | 12/20 [01:41<00:52,  6.58s/it]Task 0, Epoch 13/20 => Loss 2.889, Loss_c 2.889, Losses_rt 0.000, Train_accy 93.48, Test_accy 86.29:  65%|██████▌   | 13/20 [01:41<00:45,  6.53s/it]

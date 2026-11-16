@@ -1,0 +1,14 @@
+[2026-11-09 11:40:08] start imageneta_lbr_s1993 (lan 1, GPU trong 23762 MiB)
+[2026-11-09 12:18:10] end imageneta_lbr_s1993 (exit 0, ok)
+[2026-11-09 12:32:32] start vtab_lbr_s1993 (lan 1, GPU trong 15832 MiB)
+Terminated
+[2026-11-09 13:11:28] end vtab_lbr_s1993 (exit 143, KHONG_XONG: bi dung/loi)
+[2026-11-09 13:11:58] start vtab_lbr_s1993 (lan 2, GPU trong 15832 MiB)
+Terminated
+[2026-11-09 13:12:48] end vtab_lbr_s1993 (exit 143, KHONG_XONG: bi dung/loi)
+[2026-11-09 13:13:18] start vtab_lbr_s1993 (lan 3, GPU trong 14099 MiB)
+[2026-11-09 13:26:47] start imageneta_lbr_split_ae_md1_s1993 (lan 1, GPU trong 23762 MiB)
+Terminated
+[2026-11-09 14:15:58] imageneta_lbr_split_ae_md1_s1993 Avg 76.60666666666665
+VUOT A2 -> dung
+Running as unit: lbr-q3.service; invocation ID: 00cd040586f8463983e125b200b5f265

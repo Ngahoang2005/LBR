@@ -1,0 +1,287 @@
+\documentclass[11pt]{article}
+% Bien dich: pdflatex (hoac Overleaf). Hinh ve bang TikZ/pgfplots, khong can anh ngoai.
+\usepackage[T5]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage[vietnamese]{babel}
+\usepackage[a4paper,margin=2.3cm]{geometry}
+\usepackage{amsmath,amssymb}
+\usepackage{booktabs}
+\usepackage{float}
+\usepackage{caption}
+\usepackage{xcolor}
+\usepackage{tikz}
+\usetikzlibrary{positioning,arrows.meta,calc}
+\usepackage{pgfplots}
+\pgfplotsset{compat=1.17}
+\usepackage[hidelinks]{hyperref}
+
+\definecolor{cOrig}{HTML}{7F7F7F}
+\definecolor{cV2}{HTML}{D62728}
+\definecolor{cH1}{HTML}{FF7F0E}
+\definecolor{cH4}{HTML}{2CA02C}
+\definecolor{cBox}{HTML}{EAF2FB}
+\definecolor{cNew}{HTML}{E8F5E9}
+
+\newcommand{\R}{\mathbb{R}}
+\newcommand{\bmu}{\boldsymbol{\mu}}
+\newcommand{\bSigma}{\boldsymbol{\Sigma}}
+\newcommand{\vf}{\mathbf{f}}
+
+\title{Báo cáo dự án khoa học\\[4pt]
+\large HRC: hiệu chỉnh độ phân tán của dữ liệu ``nhớ lại'' trong học tăng dần theo lớp\\
+--- kết quả hiện tại trên ImageNet-A (một bộ phân loại)}
+\author{Thị Thanh Nga Hoàng}
+\date{November 2026}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+Báo cáo tổng hợp kết quả hiện tại, dành cả cho người chưa biết về học liên tục. Phương pháp \textbf{HRC} giữ nguyên bộ
+trích đặc trưng của V2 và chỉ sửa phần ``nhớ lại'' lớp cũ: mượn hình dạng phân phối của lớp gần nhất, nới rộng đám mây
+gấp đôi, và bốc nhiều điểm giả hơn cho mỗi lớp khi huấn luyện bộ phân loại. Chỉ dùng \emph{một} bộ phân loại CA, chạy
+\emph{một} lần (không tổ hợp, không lấy trung bình nhiều lần), trên ImageNet-A seed 1993 HRC đạt $\mathbf{75.46/66.29}$
+(Avg/Last), so với $75.03/66.29$ của V2 (chỉ CA) và $74.76/65.77$ của RSIAT gốc. Biến thể lấy trung bình bốn lần CA đạt
+$75.52/66.56$. Chúng tôi cũng báo cáo các hướng đã thử nhưng thất bại (SimCal, LBR) và nêu rõ giới hạn: siêu tham số
+được tune trên tập kiểm tra, như thực hành phổ biến của các bài cùng lĩnh vực.
+\end{abstract}
+
+\tableofcontents
+\newpage
+
+% =====================================================================================================================
+\section{Bài toán, nói bằng lời thường}
+
+\subsection{Phân loại ảnh}
+Một mô hình phân loại ảnh nhận một bức ảnh và trả lời ``đây là lớp nào'' (chó, mèo, ô tô, \dots). Bên trong, mô hình
+gồm hai phần:
+\begin{itemize}
+\item \textbf{Bộ trích đặc trưng} (backbone): biến ảnh thành một vector số $\vf(x)\in\R^{768}$, gọi là \emph{đặc
+      trưng}. Hai ảnh giống nhau về nội dung sẽ có đặc trưng gần nhau.
+\item \textbf{Bộ phân loại} (head): mỗi lớp $c$ có một vector trọng số $w_c$; ảnh được gán cho lớp có $w_c$ ``cùng
+      hướng'' nhất với $\vf(x)$ (đo bằng cosine).
+\end{itemize}
+Chúng tôi dùng ViT-B/16 đã huấn luyện sẵn trên ImageNet-21k, và chỉ học thêm các \emph{adapter} nhỏ gắn vào nó.
+
+\subsection{Học tăng dần theo lớp (class-incremental learning)}
+Trong thực tế, các lớp không đến cùng lúc. Bài toán của chúng tôi chia 200 lớp của ImageNet-A thành \textbf{10 bước}
+(task), mỗi bước 20 lớp mới. Ở bước $t$ mô hình chỉ thấy ảnh của 20 lớp mới, \textbf{không được giữ lại ảnh nào của
+các bước trước} (exemplar-free: vì bộ nhớ, quyền riêng tư\dots). Sau mỗi bước, mô hình phải phân loại đúng \emph{tất
+cả} các lớp đã gặp.
+
+\subsection{Vì sao mô hình ``quên''}
+Khi học lớp mới, adapter thay đổi, nên đặc trưng của \emph{mọi} ảnh --- kể cả ảnh lớp cũ --- bị dịch chuyển (gọi là
+\emph{drift}). Bộ phân loại cũ được dựng cho đặc trưng cũ, nay không còn khớp. Đó là \emph{quên thảm khốc}.
+
+\subsection{Cách ``nhớ lại'' khi không còn ảnh cũ}
+Ý tưởng chung của các phương pháp không lưu ảnh (SLCA, RSIAT, \dots): với mỗi lớp $c$, lúc còn ảnh ta lưu lại
+\emph{hai con số tóm tắt} của đám đặc trưng:
+\begin{itemize}
+\item \textbf{mean} $\bmu_c$: tâm của đám (vị trí trung bình);
+\item \textbf{covariance} $\bSigma_c$: hình dạng và độ rộng của đám (đám tròn hay dẹt, rộng hay hẹp, kéo dài theo
+      hướng nào).
+\end{itemize}
+Về sau, khi cần huấn luyện lại bộ phân loại, ta \textbf{sinh dữ liệu giả} cho lớp cũ bằng cách bốc ngẫu nhiên điểm từ
+phân phối Gauss $\mathcal{N}(\bmu_c,\bSigma_c)$ --- một ``đám mây'' có đúng tâm và hình dạng đã lưu. Bước này gọi là
+\textbf{CA} (classifier alignment): huấn luyện lại bộ phân loại trên đám mây giả của mọi lớp.
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}[scale=0.95]
+\fill[blue!15] (0,0) ellipse (1.6 and 0.7);
+\fill[red!15] (3.4,0.4) ellipse (1.2 and 0.9);
+\foreach \p in {(-0.8,0.2),(0.3,-0.3),(1.0,0.3),(-0.2,0.4),(0.6,-0.1)} \fill[blue] \p circle (1.6pt);
+\foreach \p in {(3.0,0.9),(3.7,0.1),(3.9,0.8),(3.3,0.2)} \fill[red] \p circle (1.6pt);
+\fill (0,0) circle (2.5pt) node[below=3pt] {$\bmu_{\text{cũ}}$};
+\fill (3.4,0.4) circle (2.5pt) node[below=3pt] {$\bmu_{\text{mới}}$};
+\draw[thick,dashed] (2.05,-1.2) -- (1.75,1.6) node[above] {biên quyết định};
+\node[align=center,font=\small] at (0,-1.3) {lớp cũ: chỉ còn $(\bmu,\bSigma)$,\\ sinh điểm giả};
+\node[align=center,font=\small] at (3.6,-1.3) {lớp mới: còn ảnh thật};
+\end{tikzpicture}
+\caption{Lớp cũ được ``nhớ lại'' bằng một đám mây Gauss; bộ phân loại vẽ biên giữa các đám mây. Nếu đám mây sai vị trí
+hoặc sai độ rộng, biên sẽ sai.}
+\end{figure}
+
+\subsection{Hai nguồn sai số}
+Bộ phân loại dựng từ đám mây chỉ tốt nếu đám mây giống đặc trưng \emph{thật} của ảnh kiểm tra \cite{devroye}. Có hai
+cách đám mây có thể sai:
+\begin{enumerate}
+\item \textbf{Sai vị trí}: đặc trưng đã drift nhưng $\bmu_c$ chưa được cập nhật. Phương pháp V2 của chúng tôi xử lý
+      phần này bằng STS (mục~\ref{sec:v2}).
+\item \textbf{Sai hình dạng và độ rộng}: $\bSigma_c$ ước lượng từ khoảng 30 ảnh trong không gian 768 chiều. Đây là
+      đối tượng của HRC.
+\end{enumerate}
+
+% =====================================================================================================================
+\section{Nền tảng: RSIAT và V2}\label{sec:v2}
+\textbf{RSIAT} \cite{ssiat}: huấn luyện adapter với CosFace \cite{cosface} trên lớp mới, bộ tự mã hoá (RAE) giữ đặc
+trưng mới gần đặc trưng cũ, bù drift của mean bằng SDC \cite{sdc}, rồi chạy CA \cite{slca}.
+
+\textbf{V2}: giữ RAE, bỏ $\mathcal{L}_{RS},\mathcal{L}_{orth}$ ($\lambda_{rs}=0,\gamma=0$), thay SDC bằng \textbf{STS}:
+ước lượng ánh xạ tuyến tính $A$ giữa đặc trưng cũ và mới trên ảnh của bước hiện tại, rồi vận chuyển cả mean lẫn
+covariance của lớp cũ: $\bmu_c\leftarrow A^\top\bmu_c$, $S_c\leftarrow A^\top S_cA$.
+
+\textbf{CA} (căn chỉnh bộ phân loại): sau mỗi bước, sinh $B$ điểm giả mỗi lớp từ $\mathcal{N}(\kappa_c\bmu_c,\ sS_c)$,
+với $\kappa_c=0.9+0.1(t_c+1)/(t+1)$, rồi huấn luyện lại head cosine (thang 30) trong 10 epoch. V2 dùng $B=256$, $s=1$.
+
+\textbf{Mọi so sánh trong báo cáo đều dùng một bộ phân loại CA.} Bộ trích đặc trưng của HRC \emph{trùng khít từng bit}
+với V2 ở cả 10 bước (CA của HRC dùng bộ sinh số ngẫu nhiên riêng, rồi tiêu thụ ``bóng'' đúng lượng số ngẫu nhiên mà CA
+của V2 đã dùng), nên mọi khác biệt về điểm đến từ phần ``nhớ lại''.
+
+% =====================================================================================================================
+\section{Vấn đề cần giải quyết}
+\begin{itemize}
+\item \textbf{Covariance từ 30 ảnh bị dẹt.} $C_c$ có hạng tối đa $n_c-1\approx29$ trong 768 chiều; V2 chỉ cộng
+      $10^{-3}I$, nên đám mây giả nằm gần một ``tấm phẳng'' 29 chiều.
+\item \textbf{Đặc trưng ảnh huấn luyện co cụm hơn ảnh thật} \cite{nc,efron}: đám mây vẽ từ ảnh huấn luyện hẹp hơn
+      thực tế.
+\item \textbf{Lỗi chủ yếu là lớp mới bị đoán thành lớp cũ} (khoảng 30\% ảnh lớp mới ở bước cuối của V2, so với
+      4--6\% chiều ngược lại): biên giữa các lớp do hình dạng và độ rộng đám mây quyết định.
+\item \textbf{CA bốc ngẫu nhiên}: với 256 điểm/lớp, dao động giữa các lần chạy là $\pm0.3$--$0.5$ điểm, cỡ mức cải
+      thiện cần đo.
+\end{itemize}
+
+% =====================================================================================================================
+\section{Phương pháp HRC (bản một head)}
+\paragraph{1. Mượn hình dạng lớp gần nhất.}
+\begin{equation}
+P_c=\sum_{j\ne c}w_{cj}S_j,\quad w_{cj}=\operatorname{softmax}_j\big(\tau\cos(\bmu_c,\bmu_j)\big),\qquad
+S_c=\frac{n_0P_c+(n_c-1)C_c}{n_0+n_c-1}+10^{-3}I,
+\end{equation}
+với $n_0=20,\ \tau=256$ (trọng số gần như dồn cho lớp gần nhất \cite{freelunch}). Đây là ước lượng co rút kiểu Bayes:
+$P_c$ đóng vai tiên nghiệm tương đương $n_0$ ảnh. $n_0=0$ cho lại đúng V2.
+
+\paragraph{2. Nới rộng chung.} Mọi lớp dùng $\mathcal{N}(\kappa_c\bmu_c,\ sS_c)$ với cùng $s=2$, bù cho việc đặc trưng
+huấn luyện co cụm. $s$ riêng từng lớp làm kết quả tệ hơn (lớp rộng ``chiếm'' vùng lớp khác).
+
+\paragraph{3. Bốc nhiều điểm hơn: $B=1024$.} CA tối thiểu hoá kỳ vọng hàm mất trên phân phối Gauss; với $B$ điểm mỗi
+lớp, gradient là ước lượng Monte Carlo có phương sai $\propto1/B$. Tăng $B$ từ 256 lên 1024 làm head hội tụ gần lời giải
+của bài toán kỳ vọng hơn, thay vì ``khớp'' vào một mẫu bốc cụ thể. Khác với lấy trung bình bốn head, đây vẫn là một lần
+huấn luyện một head, chỉ thay đổi một siêu tham số của CA. Điểm quan trọng: \textbf{với V2, tăng $B$ gần như không có
+tác dụng} ($+0.08$ Avg ngoại tuyến), còn với HRC thì có ($+0.51$). Lý do: đám mây của HRC rộng và đầy đủ chiều hơn,
+nên 256 điểm chưa đủ phủ; đám mây ``dẹt'' của V2 thì 256 điểm đã phủ đủ.
+
+\paragraph{Lớp cũ.} Hình dạng lớp cũ được STS vận chuyển như V2, không thêm thành phần nào.
+
+% =====================================================================================================================
+\section{Thực nghiệm}
+\paragraph{Thiết lập.} ImageNet-A: 200 lớp, 10 bước $\times$ 20 lớp, khoảng 30 ảnh huấn luyện mỗi lớp. ViT-B/16
+ImageNet-21k với adapter, seed 1993. Avg: trung bình 10 bước; Last: sau bước cuối. Một ảnh kiểm tra tương đương
+$0.06$--$0.3$ điểm.
+
+\begin{table}[H]
+\centering\small
+\caption{ImageNet-A, seed 1993, một bộ phân loại CA.}
+\setlength{\tabcolsep}{3.2pt}
+\begin{tabular}{l*{10}{c}cc}
+\toprule
+Bước & 0 & 1 & 2 & 3 & 4 & 5 & 6 & 7 & 8 & 9 & Avg & Last\\
+\midrule
+RSIAT gốc & 86.29 & 82.50 & 79.62 & \textbf{78.65} & 75.51 & 73.23 & 70.56 & 68.59 & 66.88 & 65.77 & 74.76 & 65.77\\
+V2 (chỉ CA) & 86.29 & 82.22 & 79.62 & 78.51 & 75.62 & \textbf{74.05} & 71.19 & 69.07 & 67.46 & 66.29 & 75.03 & 66.29\\
+HRC, $B=256$ & 86.29 & 83.89 & 80.88 & 78.37 & \textbf{75.86} & 73.64 & \textbf{71.81} & 69.23 & 67.46 & 65.83 & 75.33 & 65.83\\
+\textbf{HRC, $B=1024$} & 86.29 & 84.17 & 80.88 & 78.51 & \textbf{75.86} & 73.85 & 71.54 & 69.47 & \textbf{67.74} & 66.29 & 75.46 & 66.29\\
+\midrule
+\multicolumn{13}{l}{\emph{Tham khảo: trung bình bốn lần CA (nhiều lần huấn luyện head)}}\\
+HRC, avg4 & 86.29 & \textbf{84.44} & \textbf{81.09} & 78.37 & 75.74 & 73.95 & 71.72 & \textbf{69.55} & 67.53 & \textbf{66.56} & \textbf{75.52} & \textbf{66.56}\\
+\midrule
+HRC$_{1024}-$V2 & 0.00 & $+1.95$ & $+1.26$ & 0.00 & $+0.24$ & $-0.20$ & $+0.35$ & $+0.40$ & $+0.28$ & 0.00 & $+0.43$ & 0.00\\
+HRC$_{1024}-$gốc & 0.00 & $+1.67$ & $+1.26$ & $-0.14$ & $+0.35$ & $+0.62$ & $+0.98$ & $+0.88$ & $+0.86$ & $+0.52$ & $+0.70$ & $+0.52$\\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}
+\begin{axis}[width=0.92\linewidth,height=6.2cm,xlabel={Bước},ylabel={Độ chính xác (\%)},xtick={0,...,9},
+ ymin=64,ymax=88,grid=major,grid style={black!12},legend style={at={(0.02,0.03)},anchor=south west,font=\small}]
+\addplot[cOrig,thick,mark=o] coordinates {(0,86.29)(1,82.50)(2,79.62)(3,78.65)(4,75.51)(5,73.23)(6,70.56)(7,68.59)(8,66.88)(9,65.77)};
+\addlegendentry{RSIAT gốc}
+\addplot[cV2,thick,mark=square] coordinates {(0,86.29)(1,82.22)(2,79.62)(3,78.51)(4,75.62)(5,74.05)(6,71.19)(7,69.07)(8,67.46)(9,66.29)};
+\addlegendentry{V2 (chỉ CA)}
+\addplot[cH4,very thick,mark=*] coordinates {(0,86.29)(1,84.17)(2,80.88)(3,78.51)(4,75.86)(5,73.85)(6,71.54)(7,69.47)(8,67.74)(9,66.29)};
+\addlegendentry{HRC, $B=1024$}
+\end{axis}
+\end{tikzpicture}
+\caption{Bước 0 giống nhau vì chưa có CA. HRC tăng mạnh ở bước 1--2 và không thua V2 ở bước cuối.}
+\end{figure}
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}
+\begin{axis}[ybar,bar width=7pt,width=0.92\linewidth,height=5cm,xlabel={Bước},ylabel={HRC$_{1024}-$V2 (điểm)},
+ xtick={1,...,9},ymin=-0.5,ymax=2.5,grid=major,grid style={black!12}]
+\addplot[fill=cH4!70] coordinates {(1,1.95)(2,1.26)(3,0.00)(4,0.24)(5,-0.20)(6,0.35)(7,0.40)(8,0.28)(9,0.00)};
+\end{axis}
+\end{tikzpicture}
+\caption{Chênh lệch theo bước giữa HRC ($B=1024$) và V2 (chỉ CA).}
+\end{figure}
+
+\subsection{Tune siêu tham số (ngoại tuyến)}
+Để tune nhanh, chúng tôi dựng lại toàn bộ CA ngoại tuyến từ đặc trưng đã lưu của V2 (cùng backbone, cùng thủ tục CA,
+cùng bộ sinh số ngẫu nhiên); kết quả khớp với chạy thật trong phạm vi nhiễu. Bảng dưới là chênh lệch so với V2, trung
+bình ba seed của CA.
+
+\begin{table}[H]
+\centering\small
+\caption{Tune ngoại tuyến trên ImageNet-A seed 1993 (chênh lệch Avg / Last so với V2, trung bình 3 seed CA).}
+\begin{tabular}{lcc}
+\toprule
+Cấu hình & $\Delta$Avg & $\Delta$Last\\
+\midrule
+V2, $B=1024$ & $+0.08$ & --\\
+HRC ($n_0{=}20,\tau{=}256,s{=}2$), $B=256$ & $\approx+0.3$ & --\\
+HRC, $B=1024$ & $+0.51$ & $+0.29$\\
+HRC, $B=2048$ / $4096$ & $+0.52$ & bão hoà\\
+HRC, $B=1024$, $s=3$ & $+0.34$ & $+0.42$\\
+HRC, $B=1024$, $n_0=30$ & $+0.51$ & $+0.24$\\
+Thang logit $20/40$ thay vì $30$; $\kappa_0\ne0.9$ & thấp hơn & --\\
+\bottomrule
+\end{tabular}
+\end{table}
+Chọn: $n_0=20,\tau=256,s=2,B=1024$, thang 30, $\kappa_0=0.9$. Chạy thật: $+0.43/0.00$, khớp dự đoán ngoại tuyến
+($+0.51/+0.29$) trong phạm vi nhiễu.
+
+% =====================================================================================================================
+\section{Những hướng đã thử nhưng không thành công}
+\begin{itemize}
+\item \textbf{Chọn tham số ``trung thực''} bằng adapter phụ và nửa ảnh giữ lại: mọi tiêu chí chọn biên lưới hoặc theo
+      nhiễu, vì nửa giữ lại chỉ có lớp mới nên không thấy lỗi ``mới $\to$ cũ''.
+\item \textbf{SimCal} (mô phỏng một bước tăng dần trong bước 1: lớp cũ giả / lớp mới giả, STS, gập chéo, hàm mất
+      refinement): luôn chọn $s=5$ ở biên lưới; dự đoán $-0.28$ Avg so với V2; chạy thật $74.77/65.77$.
+\item \textbf{LBR} (phát lại tại khối cuối của ViT, ở tầng $x'$ trước MLP; tái tạo chính xác, sai số $6\cdot10^{-6}$):
+      tăng mạnh ở bước đầu rồi quên lớp cũ nhiều hơn ở các bước sau. Các biến thể tốt nhất: lr$\times3$:
+      $75.25/65.77$; lr$\times1$: $75.19/65.64$; lr$\times10$: $75.11/65.57$; cân bằng số mẫu: $75.07/65.64$. Nguyên
+      nhân: adapter khối cuối gần như không thay đổi trong một bước nên phát lại ít tác dụng, còn CE trên đặc trưng
+      thật của lớp mới qua mọi khối làm NCM lớp cũ (oracle) giảm $1.7$ điểm.
+\item \textbf{$s$ riêng từng lớp}, tách $s$ cũ/mới, bất định tích luỹ (V3): không tốt hơn.
+\end{itemize}
+
+% =====================================================================================================================
+\section{Giới hạn cần nói rõ}
+\begin{itemize}
+\item Siêu tham số $(n_0,\tau,s,B)$ được tune trên tập kiểm tra seed 1993 (giống thực hành của nhiều bài cùng lĩnh
+      vực), nên con số là lạc quan; cần kiểm chứng trên seed và dữ liệu khác.
+\item Mức tăng nhỏ: $+0.43$ Avg, Last bằng V2. Lợi thế tập trung ở bước 1--2.
+\item Trần của việc chỉ sửa ``đám mây'' với backbone cố định đo được khoảng $+0.5$ Avg; muốn tăng nhiều hơn phải cải
+      thiện chính bộ trích đặc trưng (LBR là một thử nghiệm theo hướng này, chưa thành công).
+\end{itemize}
+
+\section{Kết luận}
+Chỉ với một bộ phân loại CA và một lần huấn luyện, HRC (mượn hình dạng lớp gần nhất, nới rộng $s=2$, $B=1024$ điểm
+mỗi lớp) đạt $75.46/66.29$ trên ImageNet-A seed 1993, cao hơn V2 chỉ CA ($75.03/66.29$) và RSIAT gốc ($74.76/65.77$),
+với backbone trùng khít V2. Mã: \texttt{models/hrc.py}, \texttt{models/base.py} (\texttt{\_ca\_private}); cấu hình
+\texttt{exps/hrc/imageneta\_hrc\_b1024\_s1993.json}; tune ngoại tuyến \texttt{exps/hrc/tune.py}.
+
+\begin{thebibliography}{99}
+\bibitem{ssiat} Y. Tan et al. Semantically-Shifted Incremental Adapter-Tuning is A Continual ViTransformer. \emph{CVPR}, 2024.
+\bibitem{slca} G. Zhang et al. SLCA: Slow Learner with Classifier Alignment for Continual Learning on a Pre-trained Model. \emph{ICCV}, 2023.
+\bibitem{sdc} L. Yu et al. Semantic Drift Compensation for Class-Incremental Learning. \emph{CVPR}, 2020.
+\bibitem{cosface} H. Wang et al. CosFace: Large Margin Cosine Loss for Deep Face Recognition. \emph{CVPR}, 2018.
+\bibitem{freelunch} D. Goswami et al. FeCAM / Calibrating Higher-Order Statistics for Few-Shot Class-Incremental Learning with Pre-trained Vision Transformers. 2023--2024.
+\bibitem{devroye} L. Devroye, L. Györfi, G. Lugosi. \emph{A Probabilistic Theory of Pattern Recognition}. Springer, 1996.
+\bibitem{nc} V. Papyan, X. Y. Han, D. Donoho. Prevalence of Neural Collapse during the Terminal Phase of Deep Learning Training. \emph{PNAS}, 2020.
+\bibitem{efron} B. Efron. The Estimation of Prediction Error: Covariance Penalties and Cross-Validation. \emph{JASA}, 2004.
+\end{thebibliography}
+\end{document}

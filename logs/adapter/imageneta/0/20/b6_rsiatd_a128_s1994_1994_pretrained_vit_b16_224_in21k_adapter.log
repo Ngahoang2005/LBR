@@ -1,0 +1,230 @@
+2026-11-16 07:19:06,056 [trainer.py] => config: exps/run/imageneta_b6_rsiatd_a128_s1994.json
+2026-11-16 07:19:06,056 [trainer.py] => prefix: b6_rsiatd_a128_s1994
+2026-11-16 07:19:06,056 [trainer.py] => dataset: imageneta
+2026-11-16 07:19:06,056 [trainer.py] => shuffle: True
+2026-11-16 07:19:06,056 [trainer.py] => ssca: True
+2026-11-16 07:19:06,056 [trainer.py] => ca: True
+2026-11-16 07:19:06,056 [trainer.py] => init_cls: 20
+2026-11-16 07:19:06,056 [trainer.py] => increment: 20
+2026-11-16 07:19:06,056 [trainer.py] => model_name: adapter
+2026-11-16 07:19:06,056 [trainer.py] => convnet_type: pretrained_vit_b16_224_in21k_adapter
+2026-11-16 07:19:06,056 [trainer.py] => device: [device(type='cuda', index=0)]
+2026-11-16 07:19:06,056 [trainer.py] => seed: 1994
+2026-11-16 07:19:06,056 [trainer.py] => init_epochs: 20
+2026-11-16 07:19:06,056 [trainer.py] => warmup_epoch: 3
+2026-11-16 07:19:06,056 [trainer.py] => inc_epochs: 15
+2026-11-16 07:19:06,056 [trainer.py] => ca_epochs: 10
+2026-11-16 07:19:06,056 [trainer.py] => init_lr: 0.006688537652915857
+2026-11-16 07:19:06,056 [trainer.py] => batch_size: 48
+2026-11-16 07:19:06,056 [trainer.py] => weight_decay: 5.929828534160845e-07
+2026-11-16 07:19:06,056 [trainer.py] => min_lr: 0
+2026-11-16 07:19:06,056 [trainer.py] => ffn_num: 64
+2026-11-16 07:19:06,056 [trainer.py] => optimizer: sgd
+2026-11-16 07:19:06,056 [trainer.py] => scale: 30.0
+2026-11-16 07:19:06,056 [trainer.py] => margin: 0.3
+2026-11-16 07:19:06,056 [trainer.py] => alpha: 1.0
+2026-11-16 07:19:06,056 [trainer.py] => rs_margin: 1.5
+2026-11-16 07:19:06,056 [trainer.py] => lambda_rs: 1.0
+2026-11-16 07:19:06,056 [trainer.py] => beta: 3.0
+2026-11-16 07:19:06,056 [trainer.py] => gamma: 6.0
+2026-11-16 07:19:06,056 [trainer.py] => ae_code_dims: 128
+2026-11-16 07:19:06,056 [trainer.py] => ae_init_lr: 0.0003120779977680931
+2026-11-16 07:19:06,056 [trainer.py] => ae_weight_decay: 2.424346330636298e-05
+2026-11-16 07:19:06,056 [trainer.py] => ca_s: 2.0
+2026-11-16 07:19:06,056 [trainer.py] => ca_n0: 20.0
+2026-11-16 07:19:06,056 [trainer.py] => ca_tau: 256.0
+2026-11-16 07:19:06,056 [trainer.py] => ckpt_dir: /home/tahuuloc/Documents/httn/RSIAT/exps/claims/ckpt/b6_rsiatd_a128_s1994
+2026-11-16 07:19:06,056 [trainer.py] => ckpt_tasks: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
+2026-11-16 07:19:06,056 [trainer.py] => ffn_num_last: 128
+2026-11-16 07:19:06,067 [data_manager.py] => [85, 41, 23, 28, 70, 87, 134, 151, 51, 159, 178, 119, 50, 117, 73, 95, 86, 147, 63, 22, 79, 175, 40, 155, 174, 54, 132, 72, 124, 157, 93, 26, 196, 74, 44, 15, 169, 122, 88, 171, 184, 6, 18, 145, 48, 197, 64, 172, 126, 96, 11, 55, 193, 66, 128, 21, 77, 113, 140, 116, 141, 133, 120, 29, 115, 14, 103, 127, 114, 19, 9, 38, 33, 195, 81, 35, 69, 181, 47, 129, 112, 168, 198, 71, 101, 188, 68, 90, 158, 163, 52, 8, 185, 59, 154, 92, 56, 183, 32, 136, 65, 45, 46, 173, 189, 108, 102, 144, 0, 107, 187, 100, 98, 192, 43, 161, 104, 75, 150, 166, 121, 60, 160, 3, 143, 153, 62, 142, 61, 110, 194, 97, 25, 177, 179, 17, 49, 31, 94, 111, 16, 53, 91, 58, 135, 83, 2, 12, 13, 165, 42, 36, 186, 105, 1, 7, 149, 170, 27, 24, 78, 167, 137, 138, 118, 10, 139, 164, 20, 57, 123, 199, 89, 130, 82, 162, 176, 148, 109, 125, 67, 106, 37, 146, 131, 180, 156, 39, 5, 84, 4, 190, 152, 191, 30, 76, 80, 34, 99, 182]
+2026-11-16 07:19:08,813 [trainer.py] => All params: 87086656
+2026-11-16 07:19:08,813 [trainer.py] => Trainable params: 1288000
+2026-11-16 07:19:08,819 [RSIAT_adapter.py] => Learning on 0-20
+2026-11-16 07:19:09,121 [toolkit.py] => All params: 86357824
+2026-11-16 07:19:09,121 [toolkit.py] => Trainable params: 1303360
+2026-11-16 07:21:18,547 [RSIAT_adapter.py] => Task 0, Epoch 20/20 => Loss 3.174, Loss_c 2.489, Losses_rt 0.685, Train_accy 94.54, Test_accy 82.14
+2026-11-16 07:21:30,668 [trainer.py] => CNN: {'total': 82.14, '00-09': 88.76, '10-19': 70.59, 'old': 0.0, 'new': 82.14}
+2026-11-16 07:21:30,668 [trainer.py] => CNN top1 curve: [82.14]
+2026-11-16 07:21:30,668 [trainer.py] => CNN top5 curve: [97.14]
+2026-11-16 07:21:30,668 [trainer.py] => Average Accuracy (CNN): 82.14
+2026-11-16 07:21:31,061 [trainer.py] => All params: 87102016
+2026-11-16 07:21:31,061 [trainer.py] => Trainable params: 1303360
+2026-11-16 07:21:31,079 [RSIAT_adapter.py] => Learning on 20-40
+2026-11-16 07:21:34,455 [toolkit.py] => All params: 87233088
+2026-11-16 07:21:34,455 [toolkit.py] => Trainable params: 1434432
+2026-11-16 07:24:00,882 [RSIAT_adapter.py] => Task 1, Epoch 15/15 => Loss 5.339, Loss_c 3.180, Losses_rt 2.159, Train_accy 83.95, Test_accy 73.68
+2026-11-16 07:24:16,944 [base.py] => CA Task 1 => Loss 0.285, Test_accy 74.440
+2026-11-16 07:24:19,014 [base.py] => CA Task 1 => Loss 0.218, Test_accy 75.560
+2026-11-16 07:24:21,086 [base.py] => CA Task 1 => Loss 0.187, Test_accy 75.190
+2026-11-16 07:24:23,134 [base.py] => CA Task 1 => Loss 0.159, Test_accy 75.560
+2026-11-16 07:24:25,146 [base.py] => CA Task 1 => Loss 0.148, Test_accy 75.560
+2026-11-16 07:24:27,188 [base.py] => CA Task 1 => Loss 0.139, Test_accy 75.190
+2026-11-16 07:24:29,267 [base.py] => CA Task 1 => Loss 0.141, Test_accy 75.190
+2026-11-16 07:24:31,303 [base.py] => CA Task 1 => Loss 0.134, Test_accy 75.190
+2026-11-16 07:24:33,330 [base.py] => CA Task 1 => Loss 0.138, Test_accy 75.560
+2026-11-16 07:24:35,377 [base.py] => CA Task 1 => Loss 0.138, Test_accy 75.560
+2026-11-16 07:24:37,351 [trainer.py] => CNN: {'total': 75.56, '00-09': 79.78, '10-19': 70.59, '20-29': 65.91, '30-39': 79.27, 'old': 76.43, 'new': 74.6}
+2026-11-16 07:24:37,351 [trainer.py] => CNN top1 curve: [82.14, 75.56]
+2026-11-16 07:24:37,351 [trainer.py] => CNN top5 curve: [97.14, 92.86]
+2026-11-16 07:24:37,351 [trainer.py] => Average Accuracy (CNN): 78.85
+2026-11-16 07:24:37,885 [trainer.py] => All params: 87117376
+2026-11-16 07:24:37,885 [trainer.py] => Trainable params: 1318720
+2026-11-16 07:24:37,889 [RSIAT_adapter.py] => Learning on 40-60
+2026-11-16 07:24:41,871 [toolkit.py] => All params: 87248448
+2026-11-16 07:24:41,872 [toolkit.py] => Trainable params: 1449792
+2026-11-16 07:27:37,920 [RSIAT_adapter.py] => Task 2, Epoch 15/15 => Loss 4.967, Loss_c 2.868, Losses_rt 2.099, Train_accy 81.95, Test_accy 75.61
+2026-11-16 07:27:57,200 [base.py] => CA Task 2 => Loss 0.296, Test_accy 77.160
+2026-11-16 07:28:00,515 [base.py] => CA Task 2 => Loss 0.248, Test_accy 77.830
+2026-11-16 07:28:03,687 [base.py] => CA Task 2 => Loss 0.227, Test_accy 78.050
+2026-11-16 07:28:06,979 [base.py] => CA Task 2 => Loss 0.212, Test_accy 77.830
+2026-11-16 07:28:10,227 [base.py] => CA Task 2 => Loss 0.195, Test_accy 78.050
+2026-11-16 07:28:13,473 [base.py] => CA Task 2 => Loss 0.190, Test_accy 78.050
+2026-11-16 07:28:16,716 [base.py] => CA Task 2 => Loss 0.185, Test_accy 78.050
+2026-11-16 07:28:19,974 [base.py] => CA Task 2 => Loss 0.181, Test_accy 78.050
+2026-11-16 07:28:23,249 [base.py] => CA Task 2 => Loss 0.185, Test_accy 78.050
+2026-11-16 07:28:26,219 [base.py] => CA Task 2 => Loss 0.182, Test_accy 78.050
+2026-11-16 07:28:29,053 [trainer.py] => CNN: {'total': 78.05, '00-09': 75.28, '10-19': 72.55, '20-29': 65.91, '30-39': 79.27, '40-49': 77.17, '50-59': 89.25, 'old': 74.44, 'new': 83.24}
+2026-11-16 07:28:29,053 [trainer.py] => CNN top1 curve: [82.14, 75.56, 78.05]
+2026-11-16 07:28:29,054 [trainer.py] => CNN top5 curve: [97.14, 92.86, 92.02]
+2026-11-16 07:28:29,054 [trainer.py] => Average Accuracy (CNN): 78.58333333333333
+2026-11-16 07:28:29,624 [trainer.py] => All params: 87132736
+2026-11-16 07:28:29,624 [trainer.py] => Trainable params: 1334080
+2026-11-16 07:28:29,630 [RSIAT_adapter.py] => Learning on 60-80
+2026-11-16 07:28:33,442 [toolkit.py] => All params: 87263808
+2026-11-16 07:28:33,442 [toolkit.py] => Trainable params: 1465152
+2026-11-16 07:31:47,360 [RSIAT_adapter.py] => Task 3, Epoch 15/15 => Loss 5.636, Loss_c 3.573, Losses_rt 2.063, Train_accy 78.73, Test_accy 74.39
+2026-11-16 07:32:03,354 [base.py] => CA Task 3 => Loss 0.335, Test_accy 75.360
+2026-11-16 07:32:06,075 [base.py] => CA Task 3 => Loss 0.288, Test_accy 75.200
+2026-11-16 07:32:08,789 [base.py] => CA Task 3 => Loss 0.263, Test_accy 76.010
+2026-11-16 07:32:11,831 [base.py] => CA Task 3 => Loss 0.249, Test_accy 75.850
+2026-11-16 07:32:16,299 [base.py] => CA Task 3 => Loss 0.241, Test_accy 76.340
+2026-11-16 07:32:20,689 [base.py] => CA Task 3 => Loss 0.239, Test_accy 76.340
+2026-11-16 07:32:24,918 [base.py] => CA Task 3 => Loss 0.238, Test_accy 76.500
+2026-11-16 07:32:29,352 [base.py] => CA Task 3 => Loss 0.224, Test_accy 76.180
+2026-11-16 07:32:33,860 [base.py] => CA Task 3 => Loss 0.229, Test_accy 76.500
+2026-11-16 07:32:38,203 [base.py] => CA Task 3 => Loss 0.225, Test_accy 76.500
+2026-11-16 07:32:42,260 [trainer.py] => CNN: {'total': 76.5, '00-09': 69.66, '10-19': 70.59, '20-29': 63.64, '30-39': 79.27, '40-49': 72.83, '50-59': 89.25, '60-69': 82.19, '70-79': 76.34, 'old': 75.61, 'new': 78.92}
+2026-11-16 07:32:42,260 [trainer.py] => CNN top1 curve: [82.14, 75.56, 78.05, 76.5]
+2026-11-16 07:32:42,260 [trainer.py] => CNN top5 curve: [97.14, 92.86, 92.02, 91.9]
+2026-11-16 07:32:42,260 [trainer.py] => Average Accuracy (CNN): 78.0625
+2026-11-16 07:32:42,799 [trainer.py] => All params: 87148096
+2026-11-16 07:32:42,799 [trainer.py] => Trainable params: 1349440
+2026-11-16 07:32:42,802 [RSIAT_adapter.py] => Learning on 80-100
+2026-11-16 07:32:46,323 [toolkit.py] => All params: 87279168
+2026-11-16 07:32:46,323 [toolkit.py] => Trainable params: 1480512
+2026-11-16 07:35:58,553 [RSIAT_adapter.py] => Task 4, Epoch 15/15 => Loss 4.833, Loss_c 2.866, Losses_rt 1.966, Train_accy 82.27, Test_accy 72.39
+2026-11-16 07:36:18,220 [base.py] => CA Task 4 => Loss 0.331, Test_accy 73.550
+2026-11-16 07:36:21,553 [base.py] => CA Task 4 => Loss 0.289, Test_accy 73.940
+2026-11-16 07:36:24,905 [base.py] => CA Task 4 => Loss 0.273, Test_accy 74.190
+2026-11-16 07:36:28,322 [base.py] => CA Task 4 => Loss 0.260, Test_accy 74.060
+2026-11-16 07:36:31,688 [base.py] => CA Task 4 => Loss 0.255, Test_accy 74.190
+2026-11-16 07:36:35,058 [base.py] => CA Task 4 => Loss 0.251, Test_accy 74.060
+2026-11-16 07:36:38,418 [base.py] => CA Task 4 => Loss 0.247, Test_accy 74.190
+2026-11-16 07:36:41,775 [base.py] => CA Task 4 => Loss 0.241, Test_accy 74.190
+2026-11-16 07:36:46,453 [base.py] => CA Task 4 => Loss 0.236, Test_accy 74.190
+2026-11-16 07:36:51,927 [base.py] => CA Task 4 => Loss 0.236, Test_accy 74.190
+2026-11-16 07:36:56,774 [trainer.py] => CNN: {'total': 74.19, '00-09': 65.17, '10-19': 66.67, '20-29': 56.82, '30-39': 76.83, '40-49': 69.57, '50-59': 90.32, '60-69': 79.45, '70-79': 76.34, '80-89': 62.5, '90-99': 81.37, 'old': 74.07, 'new': 74.68}
+2026-11-16 07:36:56,774 [trainer.py] => CNN top1 curve: [82.14, 75.56, 78.05, 76.5, 74.19]
+2026-11-16 07:36:56,774 [trainer.py] => CNN top5 curve: [97.14, 92.86, 92.02, 91.9, 90.84]
+2026-11-16 07:36:56,774 [trainer.py] => Average Accuracy (CNN): 77.288
+2026-11-16 07:36:57,379 [trainer.py] => All params: 87163456
+2026-11-16 07:36:57,380 [trainer.py] => Trainable params: 1364800
+2026-11-16 07:36:57,383 [RSIAT_adapter.py] => Learning on 100-120
+2026-11-16 07:37:00,684 [toolkit.py] => All params: 87294528
+2026-11-16 07:37:00,684 [toolkit.py] => Trainable params: 1495872
+2026-11-16 07:40:14,334 [RSIAT_adapter.py] => Task 5, Epoch 15/15 => Loss 5.180, Loss_c 3.276, Losses_rt 1.904, Train_accy 80.96, Test_accy 69.51
+2026-11-16 07:40:35,120 [base.py] => CA Task 5 => Loss 0.355, Test_accy 70.400
+2026-11-16 07:40:41,064 [base.py] => CA Task 5 => Loss 0.317, Test_accy 70.840
+2026-11-16 07:40:46,880 [base.py] => CA Task 5 => Loss 0.298, Test_accy 71.400
+2026-11-16 07:40:51,889 [base.py] => CA Task 5 => Loss 0.292, Test_accy 71.180
+2026-11-16 07:40:55,793 [base.py] => CA Task 5 => Loss 0.283, Test_accy 71.290
+2026-11-16 07:40:59,623 [base.py] => CA Task 5 => Loss 0.282, Test_accy 71.730
+2026-11-16 07:41:03,461 [base.py] => CA Task 5 => Loss 0.277, Test_accy 71.950
+2026-11-16 07:41:07,298 [base.py] => CA Task 5 => Loss 0.276, Test_accy 71.730
+2026-11-16 07:41:11,144 [base.py] => CA Task 5 => Loss 0.275, Test_accy 71.950
+2026-11-16 07:41:14,985 [base.py] => CA Task 5 => Loss 0.276, Test_accy 71.950
+2026-11-16 07:41:20,448 [trainer.py] => CNN: {'total': 71.95, '00-09': 61.8, '10-19': 66.67, '20-29': 59.09, '30-39': 74.39, '40-49': 70.65, '50-59': 87.1, '60-69': 79.45, '70-79': 75.27, '80-89': 55.36, '90-99': 82.35, '100-109': 61.29, '110-119': 70.77, 'old': 72.9, 'new': 66.14}
+2026-11-16 07:41:20,449 [trainer.py] => CNN top1 curve: [82.14, 75.56, 78.05, 76.5, 74.19, 71.95]
+2026-11-16 07:41:20,449 [trainer.py] => CNN top5 curve: [97.14, 92.86, 92.02, 91.9, 90.84, 89.36]
+2026-11-16 07:41:20,449 [trainer.py] => Average Accuracy (CNN): 76.39833333333333
+2026-11-16 07:41:21,046 [trainer.py] => All params: 87178816
+2026-11-16 07:41:21,046 [trainer.py] => Trainable params: 1380160
+2026-11-16 07:41:21,050 [RSIAT_adapter.py] => Learning on 120-140
+2026-11-16 07:41:24,570 [toolkit.py] => All params: 87309888
+2026-11-16 07:41:24,570 [toolkit.py] => Trainable params: 1511232
+2026-11-16 07:44:38,212 [RSIAT_adapter.py] => Task 6, Epoch 15/15 => Loss 4.728, Loss_c 2.822, Losses_rt 1.906, Train_accy 81.27, Test_accy 68.13
+2026-11-16 07:44:57,076 [base.py] => CA Task 6 => Loss 0.363, Test_accy 69.270
+2026-11-16 07:45:01,995 [base.py] => CA Task 6 => Loss 0.326, Test_accy 70.030
+2026-11-16 07:45:06,851 [base.py] => CA Task 6 => Loss 0.310, Test_accy 70.310
+2026-11-16 07:45:11,710 [base.py] => CA Task 6 => Loss 0.305, Test_accy 69.740
+2026-11-16 07:45:16,859 [base.py] => CA Task 6 => Loss 0.302, Test_accy 70.120
+2026-11-16 07:45:21,824 [base.py] => CA Task 6 => Loss 0.300, Test_accy 70.120
+2026-11-16 07:45:26,819 [base.py] => CA Task 6 => Loss 0.300, Test_accy 70.310
+2026-11-16 07:45:31,855 [base.py] => CA Task 6 => Loss 0.292, Test_accy 70.220
+2026-11-16 07:45:36,942 [base.py] => CA Task 6 => Loss 0.294, Test_accy 70.220
+2026-11-16 07:45:42,025 [base.py] => CA Task 6 => Loss 0.294, Test_accy 70.310
+2026-11-16 07:45:46,612 [trainer.py] => CNN: {'total': 70.31, '00-09': 60.67, '10-19': 64.71, '20-29': 54.55, '30-39': 69.51, '40-49': 70.65, '50-59': 86.02, '60-69': 76.71, '70-79': 74.19, '80-89': 53.57, '90-99': 79.41, '100-109': 61.29, '110-119': 69.23, '120-129': 75.0, '130-139': 65.31, 'old': 70.07, 'new': 71.81}
+2026-11-16 07:45:46,613 [trainer.py] => CNN top1 curve: [82.14, 75.56, 78.05, 76.5, 74.19, 71.95, 70.31]
+2026-11-16 07:45:46,613 [trainer.py] => CNN top5 curve: [97.14, 92.86, 92.02, 91.9, 90.84, 89.36, 88.49]
+2026-11-16 07:45:46,613 [trainer.py] => Average Accuracy (CNN): 75.52857142857144
+2026-11-16 07:45:47,257 [trainer.py] => All params: 87194176
+2026-11-16 07:45:47,257 [trainer.py] => Trainable params: 1395520
+2026-11-16 07:45:47,261 [RSIAT_adapter.py] => Learning on 140-160
+2026-11-16 07:45:51,500 [toolkit.py] => All params: 87325248
+2026-11-16 07:45:51,501 [toolkit.py] => Trainable params: 1526592
+2026-11-16 07:49:49,118 [RSIAT_adapter.py] => Task 7, Epoch 15/15 => Loss 4.675, Loss_c 2.807, Losses_rt 1.867, Train_accy 80.11, Test_accy 66.75
+2026-11-16 07:50:13,114 [base.py] => CA Task 7 => Loss 0.397, Test_accy 68.330
+2026-11-16 07:50:18,931 [base.py] => CA Task 7 => Loss 0.363, Test_accy 68.560
+2026-11-16 07:50:24,847 [base.py] => CA Task 7 => Loss 0.352, Test_accy 69.120
+2026-11-16 07:50:30,740 [base.py] => CA Task 7 => Loss 0.342, Test_accy 69.120
+2026-11-16 07:50:36,577 [base.py] => CA Task 7 => Loss 0.337, Test_accy 68.960
+2026-11-16 07:50:42,537 [base.py] => CA Task 7 => Loss 0.335, Test_accy 69.350
+2026-11-16 07:50:48,640 [base.py] => CA Task 7 => Loss 0.333, Test_accy 69.270
+2026-11-16 07:50:54,601 [base.py] => CA Task 7 => Loss 0.323, Test_accy 69.430
+2026-11-16 07:51:00,698 [base.py] => CA Task 7 => Loss 0.327, Test_accy 69.270
+2026-11-16 07:51:06,725 [base.py] => CA Task 7 => Loss 0.328, Test_accy 69.350
+2026-11-16 07:51:12,238 [trainer.py] => CNN: {'total': 69.35, '00-09': 55.06, '10-19': 62.75, '20-29': 50.0, '30-39': 67.07, '40-49': 68.48, '50-59': 82.8, '60-69': 73.97, '70-79': 72.04, '80-89': 53.57, '90-99': 75.49, '100-109': 64.52, '110-119': 67.69, '120-129': 72.0, '130-139': 63.27, '140-149': 70.71, '150-159': 81.9, 'old': 67.84, 'new': 76.74}
+2026-11-16 07:51:12,238 [trainer.py] => CNN top1 curve: [82.14, 75.56, 78.05, 76.5, 74.19, 71.95, 70.31, 69.35]
+2026-11-16 07:51:12,238 [trainer.py] => CNN top5 curve: [97.14, 92.86, 92.02, 91.9, 90.84, 89.36, 88.49, 88.15]
+2026-11-16 07:51:12,238 [trainer.py] => Average Accuracy (CNN): 74.75625000000001
+2026-11-16 07:51:12,865 [trainer.py] => All params: 87209536
+2026-11-16 07:51:12,866 [trainer.py] => Trainable params: 1410880
+2026-11-16 07:51:12,871 [RSIAT_adapter.py] => Learning on 160-180
+2026-11-16 07:51:15,710 [toolkit.py] => All params: 87340608
+2026-11-16 07:51:15,710 [toolkit.py] => Trainable params: 1541952
+2026-11-16 07:54:28,972 [RSIAT_adapter.py] => Task 8, Epoch 15/15 => Loss 5.428, Loss_c 3.570, Losses_rt 1.857, Train_accy 78.39, Test_accy 64.63
+2026-11-16 07:54:50,147 [base.py] => CA Task 8 => Loss 0.436, Test_accy 65.980
+2026-11-16 07:54:56,648 [base.py] => CA Task 8 => Loss 0.397, Test_accy 66.260
+2026-11-16 07:55:03,213 [base.py] => CA Task 8 => Loss 0.388, Test_accy 65.910
+2026-11-16 07:55:09,807 [base.py] => CA Task 8 => Loss 0.379, Test_accy 66.120
+2026-11-16 07:55:16,305 [base.py] => CA Task 8 => Loss 0.372, Test_accy 65.690
+2026-11-16 07:55:23,115 [base.py] => CA Task 8 => Loss 0.370, Test_accy 65.910
+2026-11-16 07:55:29,731 [base.py] => CA Task 8 => Loss 0.368, Test_accy 65.770
+2026-11-16 07:55:36,253 [base.py] => CA Task 8 => Loss 0.368, Test_accy 65.770
+2026-11-16 07:55:42,958 [base.py] => CA Task 8 => Loss 0.364, Test_accy 65.690
+2026-11-16 07:55:49,686 [base.py] => CA Task 8 => Loss 0.363, Test_accy 65.690
+2026-11-16 07:55:55,670 [trainer.py] => CNN: {'total': 65.69, '00-09': 51.69, '10-19': 66.67, '20-29': 47.73, '30-39': 64.63, '40-49': 65.22, '50-59': 74.19, '60-69': 78.08, '70-79': 67.74, '80-89': 48.21, '90-99': 75.49, '100-109': 59.68, '110-119': 64.62, '120-129': 69.0, '130-139': 61.22, '140-149': 69.7, '150-159': 79.31, '160-169': 67.78, '170-179': 32.65, 'old': 66.82, 'new': 55.4}
+2026-11-16 07:55:55,670 [trainer.py] => CNN top1 curve: [82.14, 75.56, 78.05, 76.5, 74.19, 71.95, 70.31, 69.35, 65.69]
+2026-11-16 07:55:55,670 [trainer.py] => CNN top5 curve: [97.14, 92.86, 92.02, 91.9, 90.84, 89.36, 88.49, 88.15, 86.9]
+2026-11-16 07:55:55,670 [trainer.py] => Average Accuracy (CNN): 73.74888888888889
+2026-11-16 07:55:56,328 [trainer.py] => All params: 87224896
+2026-11-16 07:55:56,329 [trainer.py] => Trainable params: 1426240
+2026-11-16 07:55:56,332 [RSIAT_adapter.py] => Learning on 180-200
+2026-11-16 07:55:58,532 [toolkit.py] => All params: 87355968
+2026-11-16 07:55:58,532 [toolkit.py] => Trainable params: 1557312
+2026-11-16 07:58:51,694 [RSIAT_adapter.py] => Task 9, Epoch 15/15 => Loss 5.578, Loss_c 3.709, Losses_rt 1.870, Train_accy 79.68, Test_accy 60.83
+2026-11-16 07:59:11,544 [base.py] => CA Task 9 => Loss 0.489, Test_accy 64.120
+2026-11-16 07:59:18,686 [base.py] => CA Task 9 => Loss 0.449, Test_accy 64.450
+2026-11-16 07:59:25,981 [base.py] => CA Task 9 => Loss 0.430, Test_accy 64.380
+2026-11-16 07:59:33,203 [base.py] => CA Task 9 => Loss 0.423, Test_accy 64.190
+2026-11-16 07:59:40,379 [base.py] => CA Task 9 => Loss 0.412, Test_accy 64.190
+2026-11-16 07:59:47,638 [base.py] => CA Task 9 => Loss 0.408, Test_accy 64.250
+2026-11-16 07:59:54,834 [base.py] => CA Task 9 => Loss 0.406, Test_accy 64.320
+2026-11-16 08:00:02,120 [base.py] => CA Task 9 => Loss 0.402, Test_accy 64.320
+2026-11-16 08:00:09,320 [base.py] => CA Task 9 => Loss 0.401, Test_accy 64.320
+2026-11-16 08:00:16,507 [base.py] => CA Task 9 => Loss 0.404, Test_accy 64.250
+2026-11-16 08:00:29,395 [trainer.py] => CNN: {'total': 64.25, '00-09': 49.44, '10-19': 54.9, '20-29': 45.45, '30-39': 64.63, '40-49': 63.04, '50-59': 75.27, '60-69': 72.6, '70-79': 65.59, '80-89': 46.43, '90-99': 74.51, '100-109': 61.29, '110-119': 61.54, '120-129': 71.0, '130-139': 61.22, '140-149': 67.68, '150-159': 75.86, '160-169': 65.56, '170-179': 36.73, '180-189': 61.4, '190-199': 71.93, 'old': 64.06, 'new': 66.67}
+2026-11-16 08:00:29,396 [trainer.py] => CNN top1 curve: [82.14, 75.56, 78.05, 76.5, 74.19, 71.95, 70.31, 69.35, 65.69, 64.25]
+2026-11-16 08:00:29,396 [trainer.py] => CNN top5 curve: [97.14, 92.86, 92.02, 91.9, 90.84, 89.36, 88.49, 88.15, 86.9, 86.04]
+2026-11-16 08:00:29,396 [trainer.py] => Average Accuracy (CNN): 72.799
+2026-11-16 08:00:30,063 [trainer.py] => Average Seed Accuracy (CNN): 72.799

@@ -1,0 +1,209 @@
+2026-11-09 10:48:45,447 [trainer.py] => config: exps/lbr2/abl_B4_n050_s1993.json
+2026-11-09 10:48:45,447 [trainer.py] => prefix: abl_B4_n050_s1993
+2026-11-09 10:48:45,447 [trainer.py] => dataset: imageneta
+2026-11-09 10:48:45,447 [trainer.py] => shuffle: True
+2026-11-09 10:48:45,447 [trainer.py] => ssca: True
+2026-11-09 10:48:45,447 [trainer.py] => ca: True
+2026-11-09 10:48:45,447 [trainer.py] => init_cls: 20
+2026-11-09 10:48:45,447 [trainer.py] => increment: 20
+2026-11-09 10:48:45,447 [trainer.py] => model_name: adapter
+2026-11-09 10:48:45,447 [trainer.py] => convnet_type: pretrained_vit_b16_224_in21k_adapter
+2026-11-09 10:48:45,447 [trainer.py] => device: [device(type='cuda', index=0)]
+2026-11-09 10:48:45,447 [trainer.py] => seed: 1993
+2026-11-09 10:48:45,447 [trainer.py] => init_epochs: 20
+2026-11-09 10:48:45,447 [trainer.py] => warmup_epoch: 3
+2026-11-09 10:48:45,447 [trainer.py] => inc_epochs: 15
+2026-11-09 10:48:45,447 [trainer.py] => ca_epochs: 10
+2026-11-09 10:48:45,447 [trainer.py] => init_lr: 0.006688537652915857
+2026-11-09 10:48:45,447 [trainer.py] => batch_size: 48
+2026-11-09 10:48:45,447 [trainer.py] => weight_decay: 5.929828534160845e-07
+2026-11-09 10:48:45,447 [trainer.py] => min_lr: 0
+2026-11-09 10:48:45,447 [trainer.py] => ffn_num: 64
+2026-11-09 10:48:45,447 [trainer.py] => optimizer: sgd
+2026-11-09 10:48:45,447 [trainer.py] => scale: 30.0
+2026-11-09 10:48:45,447 [trainer.py] => margin: 0.3
+2026-11-09 10:48:45,447 [trainer.py] => alpha: 1.0
+2026-11-09 10:48:45,447 [trainer.py] => rs_margin: 1.5
+2026-11-09 10:48:45,447 [trainer.py] => lambda_rs: 0.0
+2026-11-09 10:48:45,447 [trainer.py] => beta: 3.0
+2026-11-09 10:48:45,447 [trainer.py] => gamma: 0.0
+2026-11-09 10:48:45,447 [trainer.py] => ae_code_dims: 128
+2026-11-09 10:48:45,447 [trainer.py] => ae_init_lr: 0.0003120779977680931
+2026-11-09 10:48:45,447 [trainer.py] => ae_weight_decay: 2.424346330636298e-05
+2026-11-09 10:48:45,447 [trainer.py] => diag_dump: False
+2026-11-09 10:48:45,447 [trainer.py] => diag_dir: exps/lbr2/dump
+2026-11-09 10:48:45,447 [trainer.py] => sts: True
+2026-11-09 10:48:45,447 [trainer.py] => sts_freq: end
+2026-11-09 10:48:45,447 [trainer.py] => sts_estep: tracked
+2026-11-09 10:48:45,447 [trainer.py] => sts_eta: 0.3
+2026-11-09 10:48:45,447 [trainer.py] => sts_bg_prior: 0.5
+2026-11-09 10:48:45,447 [trainer.py] => sts_min_mass: 5.0
+2026-11-09 10:48:45,447 [trainer.py] => sts_n0: 50.0
+2026-11-09 10:48:45,447 [trainer.py] => sts_cov: True
+2026-11-09 10:48:45,447 [trainer.py] => sts_alphas: [0.01, 0.1, 1.0, 10.0, 100.0]
+2026-11-09 10:48:45,447 [trainer.py] => sts_adv: True
+2026-11-09 10:48:45,447 [trainer.py] => sts_adv_k: 16
+2026-11-09 10:48:45,447 [trainer.py] => sts_adv_steps: 10
+2026-11-09 10:48:45,447 [trainer.py] => sts_adv_step: 0.00784313725490196
+2026-11-09 10:48:45,448 [trainer.py] => sts_map: procrustes
+2026-11-09 10:48:45,448 [trainer.py] => rae: True
+2026-11-09 10:48:45,448 [trainer.py] => diag_replay: False
+2026-11-09 10:48:45,448 [trainer.py] => lbr: True
+2026-11-09 10:48:45,448 [trainer.py] => lbr_lambda: 0.0
+2026-11-09 10:48:45,448 [trainer.py] => lbr_n_fake: balanced
+2026-11-09 10:48:45,448 [trainer.py] => lbr_n0: 50.0
+2026-11-09 10:48:45,448 [trainer.py] => lbr_tau: 256.0
+2026-11-09 10:48:45,448 [trainer.py] => lbr_s: 1.0
+2026-11-09 10:48:45,448 [trainer.py] => lbr_real: none
+2026-11-09 10:48:45,448 [trainer.py] => lbr_lr_mult: 1.0
+2026-11-09 10:48:45,448 [trainer.py] => lbr_ca: xprime
+2026-11-09 10:48:45,448 [trainer.py] => lbr_sts_adv: False
+2026-11-09 10:48:45,448 [trainer.py] => lbr_loss: ce
+2026-11-09 10:48:45,448 [trainer.py] => lbr_ca_kappa: True
+2026-11-09 10:48:45,448 [trainer.py] => lbr_ca_s: 2.0
+2026-11-09 10:48:45,448 [trainer.py] => ca_samples: 1024
+2026-11-09 10:48:45,458 [data_manager.py] => [168, 136, 51, 9, 183, 101, 171, 99, 42, 159, 191, 70, 16, 188, 27, 10, 175, 26, 68, 187, 98, 6, 85, 35, 112, 43, 100, 0, 103, 181, 88, 59, 4, 2, 116, 174, 94, 80, 106, 1, 147, 17, 141, 131, 72, 23, 173, 54, 197, 118, 87, 32, 79, 104, 91, 19, 135, 107, 178, 36, 11, 199, 142, 8, 122, 3, 28, 57, 153, 172, 190, 56, 49, 44, 97, 62, 151, 169, 194, 55, 192, 12, 189, 78, 66, 180, 15, 137, 109, 134, 92, 119, 126, 52, 170, 40, 148, 65, 144, 64, 138, 45, 77, 89, 154, 90, 71, 193, 74, 30, 113, 143, 96, 84, 67, 50, 186, 156, 69, 21, 18, 111, 108, 58, 125, 157, 150, 110, 182, 129, 166, 83, 81, 60, 13, 165, 14, 176, 63, 117, 5, 22, 145, 121, 38, 41, 82, 127, 114, 20, 31, 53, 37, 163, 196, 130, 152, 162, 86, 76, 24, 34, 184, 149, 33, 128, 198, 155, 146, 167, 139, 120, 140, 102, 47, 25, 158, 123, 46, 164, 61, 7, 115, 75, 133, 160, 105, 132, 179, 124, 48, 73, 93, 39, 95, 195, 29, 177, 185, 161]
+2026-11-09 10:48:49,067 [trainer.py] => All params: 86988288
+2026-11-09 10:48:49,068 [trainer.py] => Trainable params: 1189632
+2026-11-09 10:48:49,068 [RSIAT_adapter.py] => Learning on 0-20
+2026-11-09 10:48:49,320 [toolkit.py] => All params: 86259456
+2026-11-09 10:48:49,320 [toolkit.py] => Trainable params: 1204992
+2026-11-09 10:50:44,095 [RSIAT_adapter.py] => Task 0, Epoch 20/20 => Loss 2.831, Loss_c 2.831, Losses_rt 0.000, Train_accy 92.48, Test_accy 86.29
+2026-11-09 10:50:58,191 [RSIAT_adapter.py] => [LBR] task 0: Gauss x' cho 20 lop moi (n0 = 50, tau = 256), |x'| tb 29.4
+2026-11-09 10:50:59,197 [trainer.py] => CNN: {'total': 86.29, '00-09': 84.42, '10-19': 87.76, 'old': 0.0, 'new': 86.29}
+2026-11-09 10:50:59,197 [trainer.py] => CNN top1 curve: [86.29]
+2026-11-09 10:50:59,197 [trainer.py] => CNN top5 curve: [97.14]
+2026-11-09 10:50:59,197 [trainer.py] => Average Accuracy (CNN): 86.29
+2026-11-09 10:50:59,198 [trainer.py] => All params: 87003648
+2026-11-09 10:50:59,198 [trainer.py] => Trainable params: 1204992
+2026-11-09 10:50:59,199 [RSIAT_adapter.py] => Learning on 20-40
+2026-11-09 10:51:26,178 [sts.py] => [STS] task 1: 766 anh moi, K=20 lop cu | N_c min 0.00 trung vi 7.11 | 19 lop < 5.0, dung 156 mau doi khang | nen 97.8%
+2026-11-09 10:51:28,918 [sts.py] => [STS] task 1: 766 anh moi, K=20 lop cu | N_c min 0.00 trung vi 0.88 | 18 lop < 5.0, dung 0 mau doi khang | nen 94.1%
+2026-11-09 10:51:28,920 [toolkit.py] => All params: 87134720
+2026-11-09 10:51:28,920 [toolkit.py] => Trainable params: 1336064
+2026-11-09 10:53:50,593 [RSIAT_adapter.py] => Task 1, Epoch 15/15 => Loss 4.387, Loss_c 3.494, Losses_rt 0.893, Train_accy 82.51, Test_accy 82.22
+2026-11-09 10:54:01,568 [sts.py] => [STS] task 1 buoc 1: alpha 10.0, phan du chung 0.775 | lop bam rieng 14/20 | nen 97.8% | ||buoc mean|| TB 2.5411
+2026-11-09 10:54:01,568 [sts.py] => [STS] task 1 xong: 1 buoc, dung 156 mau doi khang, lop bam rieng o buoc cuoi 14/20
+2026-11-09 10:54:08,916 [sts.py] => [STS] task 1 buoc 1: alpha 10.0, phan du chung 0.722 | lop bam rieng 2/20 | nen 94.1% | ||buoc mean|| TB 0.9363
+2026-11-09 10:54:08,916 [sts.py] => [STS] task 1 xong: 1 buoc, dung 0 mau doi khang, lop bam rieng o buoc cuoi 2/20
+2026-11-09 10:54:27,646 [RSIAT_adapter.py] => [LBR] task 1: Gauss x' cho 20 lop moi (n0 = 50, tau = 256), |x'| tb 29.5
+2026-11-09 10:54:29,970 [RSIAT_adapter.py] => CA Task 1 o tang x' (LBR v2; 1024 mau/lop, kappa True, s 2.0): Test_accy 84.440
+2026-11-09 10:54:31,634 [trainer.py] => CNN: {'total': 84.44, '00-09': 72.73, '10-19': 87.76, '20-29': 89.9, '30-39': 84.88, 'old': 81.14, 'new': 87.57}
+2026-11-09 10:54:31,634 [trainer.py] => CNN top1 curve: [86.29, 84.44]
+2026-11-09 10:54:31,634 [trainer.py] => CNN top5 curve: [97.14, 96.39]
+2026-11-09 10:54:31,634 [trainer.py] => Average Accuracy (CNN): 85.36500000000001
+2026-11-09 10:54:31,635 [trainer.py] => All params: 87019008
+2026-11-09 10:54:31,635 [trainer.py] => Trainable params: 1220352
+2026-11-09 10:54:31,638 [RSIAT_adapter.py] => Learning on 40-60
+2026-11-09 10:55:20,752 [sts.py] => [STS] task 2: 511 anh moi, K=40 lop cu | N_c min 0.00 trung vi 5.92 | 40 lop < 5.0, dung 270 mau doi khang | nen 100.0%
+2026-11-09 10:55:22,721 [sts.py] => [STS] task 2: 511 anh moi, K=40 lop cu | N_c min 0.00 trung vi 0.00 | 40 lop < 5.0, dung 0 mau doi khang | nen 100.0%
+2026-11-09 10:55:22,723 [toolkit.py] => All params: 87150080
+2026-11-09 10:55:22,723 [toolkit.py] => Trainable params: 1351424
+2026-11-09 10:57:14,845 [RSIAT_adapter.py] => Task 2, Epoch 15/15 => Loss 3.268, Loss_c 2.438, Losses_rt 0.830, Train_accy 88.85, Test_accy 80.46
+2026-11-09 10:57:26,705 [sts.py] => [STS] task 2 buoc 1: alpha 10.0, phan du chung 0.715 | lop bam rieng 21/40 | nen 100.0% | ||buoc mean|| TB 2.1918
+2026-11-09 10:57:26,705 [sts.py] => [STS] task 2 xong: 1 buoc, dung 270 mau doi khang, lop bam rieng o buoc cuoi 21/40
+2026-11-09 10:57:35,328 [sts.py] => [STS] task 2 buoc 1: alpha 10.0, phan du chung 0.674 | lop bam rieng 0/40 | nen 100.0% | ||buoc mean|| TB 0.7693
+2026-11-09 10:57:35,328 [sts.py] => [STS] task 2 xong: 1 buoc, dung 0 mau doi khang, lop bam rieng o buoc cuoi 0/40
+2026-11-09 10:57:51,322 [RSIAT_adapter.py] => [LBR] task 2: Gauss x' cho 20 lop moi (n0 = 50, tau = 256), |x'| tb 30.1
+2026-11-09 10:57:54,375 [RSIAT_adapter.py] => CA Task 2 o tang x' (LBR v2; 1024 mau/lop, kappa True, s 2.0): Test_accy 80.250
+2026-11-09 10:57:56,500 [trainer.py] => CNN: {'total': 80.25, '00-09': 67.53, '10-19': 86.73, '20-29': 83.84, '30-39': 80.23, '40-49': 85.94, '50-59': 73.08, 'old': 80.28, 'new': 80.17}
+2026-11-09 10:57:56,500 [trainer.py] => CNN top1 curve: [86.29, 84.44, 80.25]
+2026-11-09 10:57:56,500 [trainer.py] => CNN top5 curve: [97.14, 96.39, 95.38]
+2026-11-09 10:57:56,500 [trainer.py] => Average Accuracy (CNN): 83.66000000000001
+2026-11-09 10:57:56,500 [trainer.py] => All params: 87034368
+2026-11-09 10:57:56,500 [trainer.py] => Trainable params: 1235712
+2026-11-09 10:57:56,505 [RSIAT_adapter.py] => Learning on 60-80
+2026-11-09 10:59:10,886 [sts.py] => [STS] task 3: 784 anh moi, K=60 lop cu | N_c min 0.00 trung vi 8.01 | 60 lop < 5.0, dung 451 mau doi khang | nen 98.1%
+2026-11-09 10:59:13,760 [sts.py] => [STS] task 3: 784 anh moi, K=60 lop cu | N_c min 0.00 trung vi 0.01 | 57 lop < 5.0, dung 0 mau doi khang | nen 90.9%
+2026-11-09 10:59:13,763 [toolkit.py] => All params: 87165440
+2026-11-09 10:59:13,763 [toolkit.py] => Trainable params: 1366784
+2026-11-09 11:01:57,517 [RSIAT_adapter.py] => Task 3, Epoch 15/15 => Loss 3.852, Loss_c 2.986, Losses_rt 0.865, Train_accy 80.36, Test_accy 76.50
+2026-11-09 11:02:09,738 [sts.py] => [STS] task 3 buoc 1: alpha 10.0, phan du chung 0.801 | lop bam rieng 35/60 | nen 98.1% | ||buoc mean|| TB 2.0897
+2026-11-09 11:02:09,738 [sts.py] => [STS] task 3 xong: 1 buoc, dung 451 mau doi khang, lop bam rieng o buoc cuoi 35/60
+2026-11-09 11:02:17,096 [sts.py] => [STS] task 3 buoc 1: alpha 10.0, phan du chung 0.749 | lop bam rieng 3/60 | nen 90.9% | ||buoc mean|| TB 0.7789
+2026-11-09 11:02:17,097 [sts.py] => [STS] task 3 xong: 1 buoc, dung 0 mau doi khang, lop bam rieng o buoc cuoi 3/60
+2026-11-09 11:02:38,321 [RSIAT_adapter.py] => [LBR] task 3: Gauss x' cho 20 lop moi (n0 = 50, tau = 256), |x'| tb 30.3
+2026-11-09 11:02:42,459 [RSIAT_adapter.py] => CA Task 3 o tang x' (LBR v2; 1024 mau/lop, kappa True, s 2.0): Test_accy 79.370
+2026-11-09 11:02:45,285 [trainer.py] => CNN: {'total': 79.37, '00-09': 64.94, '10-19': 84.69, '20-29': 83.84, '30-39': 74.42, '40-49': 85.94, '50-59': 69.23, '60-69': 80.16, '70-79': 85.42, 'old': 77.94, 'new': 82.43}
+2026-11-09 11:02:45,285 [trainer.py] => CNN top1 curve: [86.29, 84.44, 80.25, 79.37]
+2026-11-09 11:02:45,285 [trainer.py] => CNN top5 curve: [97.14, 96.39, 95.38, 94.13]
+2026-11-09 11:02:45,285 [trainer.py] => Average Accuracy (CNN): 82.5875
+2026-11-09 11:02:45,285 [trainer.py] => All params: 87049728
+2026-11-09 11:02:45,285 [trainer.py] => Trainable params: 1251072
+2026-11-09 11:02:45,286 [RSIAT_adapter.py] => Learning on 80-100
+2026-11-09 11:04:19,396 [sts.py] => [STS] task 4: 524 anh moi, K=80 lop cu | N_c min 0.00 trung vi 6.10 | 80 lop < 5.0, dung 608 mau doi khang | nen 98.7%
+2026-11-09 11:04:21,418 [sts.py] => [STS] task 4: 524 anh moi, K=80 lop cu | N_c min 0.00 trung vi 0.00 | 80 lop < 5.0, dung 0 mau doi khang | nen 96.7%
+2026-11-09 11:04:21,420 [toolkit.py] => All params: 87180800
+2026-11-09 11:04:21,420 [toolkit.py] => Trainable params: 1382144
+2026-11-09 11:06:35,602 [RSIAT_adapter.py] => Task 4, Epoch 15/15 => Loss 3.650, Loss_c 2.811, Losses_rt 0.839, Train_accy 80.53, Test_accy 75.62
+2026-11-09 11:06:48,999 [sts.py] => [STS] task 4 buoc 1: alpha 10.0, phan du chung 0.798 | lop bam rieng 42/80 | nen 98.7% | ||buoc mean|| TB 1.6768
+2026-11-09 11:06:48,999 [sts.py] => [STS] task 4 xong: 1 buoc, dung 608 mau doi khang, lop bam rieng o buoc cuoi 42/80
+2026-11-09 11:06:57,743 [sts.py] => [STS] task 4 buoc 1: alpha 10.0, phan du chung 0.728 | lop bam rieng 0/80 | nen 96.7% | ||buoc mean|| TB 0.6865
+2026-11-09 11:06:57,744 [sts.py] => [STS] task 4 xong: 1 buoc, dung 0 mau doi khang, lop bam rieng o buoc cuoi 0/80
+2026-11-09 11:07:14,952 [RSIAT_adapter.py] => [LBR] task 4: Gauss x' cho 20 lop moi (n0 = 50, tau = 256), |x'| tb 30.2
+2026-11-09 11:07:19,914 [RSIAT_adapter.py] => CA Task 4 o tang x' (LBR v2; 1024 mau/lop, kappa True, s 2.0): Test_accy 76.340
+2026-11-09 11:07:23,238 [trainer.py] => CNN: {'total': 76.34, '00-09': 59.74, '10-19': 81.63, '20-29': 78.79, '30-39': 74.42, '40-49': 84.38, '50-59': 73.08, '60-69': 77.78, '70-79': 84.38, '80-89': 74.07, '90-99': 69.35, 'old': 77.22, 'new': 72.03}
+2026-11-09 11:07:23,238 [trainer.py] => CNN top1 curve: [86.29, 84.44, 80.25, 79.37, 76.34]
+2026-11-09 11:07:23,238 [trainer.py] => CNN top5 curve: [97.14, 96.39, 95.38, 94.13, 92.39]
+2026-11-09 11:07:23,238 [trainer.py] => Average Accuracy (CNN): 81.33800000000001
+2026-11-09 11:07:23,238 [trainer.py] => All params: 87065088
+2026-11-09 11:07:23,238 [trainer.py] => Trainable params: 1266432
+2026-11-09 11:07:23,239 [RSIAT_adapter.py] => Learning on 100-120
+2026-11-09 11:09:18,985 [sts.py] => [STS] task 5: 523 anh moi, K=100 lop cu | N_c min 0.00 trung vi 6.32 | 100 lop < 5.0, dung 780 mau doi khang | nen 96.6%
+2026-11-09 11:09:21,028 [sts.py] => [STS] task 5: 523 anh moi, K=100 lop cu | N_c min 0.00 trung vi 0.00 | 100 lop < 5.0, dung 0 mau doi khang | nen 98.1%
+2026-11-09 11:09:21,030 [toolkit.py] => All params: 87196160
+2026-11-09 11:09:21,030 [toolkit.py] => Trainable params: 1397504
+2026-11-09 11:11:42,772 [RSIAT_adapter.py] => Task 5, Epoch 15/15 => Loss 3.124, Loss_c 2.288, Losses_rt 0.836, Train_accy 87.38, Test_accy 71.90
+2026-11-09 11:11:57,022 [sts.py] => [STS] task 5 buoc 1: alpha 10.0, phan du chung 0.799 | lop bam rieng 59/100 | nen 96.6% | ||buoc mean|| TB 1.5370
+2026-11-09 11:11:57,023 [sts.py] => [STS] task 5 xong: 1 buoc, dung 780 mau doi khang, lop bam rieng o buoc cuoi 59/100
+2026-11-09 11:12:05,946 [sts.py] => [STS] task 5 buoc 1: alpha 10.0, phan du chung 0.727 | lop bam rieng 0/100 | nen 98.1% | ||buoc mean|| TB 0.6953
+2026-11-09 11:12:05,946 [sts.py] => [STS] task 5 xong: 1 buoc, dung 0 mau doi khang, lop bam rieng o buoc cuoi 0/100
+2026-11-09 11:12:23,786 [RSIAT_adapter.py] => [LBR] task 5: Gauss x' cho 20 lop moi (n0 = 50, tau = 256), |x'| tb 30.7
+2026-11-09 11:12:29,534 [RSIAT_adapter.py] => CA Task 5 o tang x' (LBR v2; 1024 mau/lop, kappa True, s 2.0): Test_accy 74.670
+2026-11-09 11:12:33,335 [trainer.py] => CNN: {'total': 74.67, '00-09': 57.14, '10-19': 80.61, '20-29': 78.79, '30-39': 68.6, '40-49': 81.25, '50-59': 69.23, '60-69': 76.98, '70-79': 82.29, '80-89': 72.84, '90-99': 67.74, '100-109': 75.0, '110-119': 78.38, 'old': 74.32, 'new': 76.87}
+2026-11-09 11:12:33,335 [trainer.py] => CNN top1 curve: [86.29, 84.44, 80.25, 79.37, 76.34, 74.67]
+2026-11-09 11:12:33,335 [trainer.py] => CNN top5 curve: [97.14, 96.39, 95.38, 94.13, 92.39, 90.97]
+2026-11-09 11:12:33,335 [trainer.py] => Average Accuracy (CNN): 80.22666666666667
+2026-11-09 11:12:33,335 [trainer.py] => All params: 87080448
+2026-11-09 11:12:33,336 [trainer.py] => Trainable params: 1281792
+2026-11-09 11:12:33,339 [RSIAT_adapter.py] => Learning on 120-140
+2026-11-09 11:14:52,829 [sts.py] => [STS] task 6: 539 anh moi, K=120 lop cu | N_c min 0.00 trung vi 7.03 | 120 lop < 5.0, dung 890 mau doi khang | nen 98.9%
+2026-11-09 11:14:55,017 [sts.py] => [STS] task 6: 539 anh moi, K=120 lop cu | N_c min 0.00 trung vi 0.00 | 120 lop < 5.0, dung 0 mau doi khang | nen 98.0%
+2026-11-09 11:14:55,020 [toolkit.py] => All params: 87211520
+2026-11-09 11:14:55,020 [toolkit.py] => Trainable params: 1412864
+2026-11-09 11:17:27,866 [RSIAT_adapter.py] => Task 6, Epoch 15/15 => Loss 3.758, Loss_c 2.922, Losses_rt 0.836, Train_accy 84.79, Test_accy 70.12
+2026-11-09 11:17:42,800 [sts.py] => [STS] task 6 buoc 1: alpha 10.0, phan du chung 0.805 | lop bam rieng 74/120 | nen 98.9% | ||buoc mean|| TB 1.7552
+2026-11-09 11:17:42,801 [sts.py] => [STS] task 6 xong: 1 buoc, dung 890 mau doi khang, lop bam rieng o buoc cuoi 74/120
+2026-11-09 11:17:51,993 [sts.py] => [STS] task 6 buoc 1: alpha 10.0, phan du chung 0.714 | lop bam rieng 0/120 | nen 98.0% | ||buoc mean|| TB 0.7312
+2026-11-09 11:17:51,993 [sts.py] => [STS] task 6 xong: 1 buoc, dung 0 mau doi khang, lop bam rieng o buoc cuoi 0/120
+2026-11-09 11:18:11,612 [RSIAT_adapter.py] => [LBR] task 6: Gauss x' cho 20 lop moi (n0 = 50, tau = 256), |x'| tb 30.6
+2026-11-09 11:18:18,204 [RSIAT_adapter.py] => CA Task 6 o tang x' (LBR v2; 1024 mau/lop, kappa True, s 2.0): Test_accy 71.720
+2026-11-09 11:18:22,512 [trainer.py] => CNN: {'total': 71.72, '00-09': 55.84, '10-19': 75.51, '20-29': 74.75, '30-39': 70.93, '40-49': 82.81, '50-59': 61.54, '60-69': 72.22, '70-79': 80.21, '80-89': 67.9, '90-99': 69.35, '100-109': 75.0, '110-119': 75.68, '120-129': 63.33, '130-139': 72.09, 'old': 72.21, 'new': 68.49}
+2026-11-09 11:18:22,512 [trainer.py] => CNN top1 curve: [86.29, 84.44, 80.25, 79.37, 76.34, 74.67, 71.72]
+2026-11-09 11:18:22,512 [trainer.py] => CNN top5 curve: [97.14, 96.39, 95.38, 94.13, 92.39, 90.97, 89.3]
+2026-11-09 11:18:22,512 [trainer.py] => Average Accuracy (CNN): 79.01142857142858
+2026-11-09 11:18:22,512 [trainer.py] => All params: 87095808
+2026-11-09 11:18:22,512 [trainer.py] => Trainable params: 1297152
+2026-11-09 11:18:22,516 [RSIAT_adapter.py] => Learning on 140-160
+2026-11-09 11:21:03,034 [sts.py] => [STS] task 7: 531 anh moi, K=140 lop cu | N_c min 0.00 trung vi 7.98 | 140 lop < 5.0, dung 1021 mau doi khang | nen 99.4%
+2026-11-09 11:21:05,162 [sts.py] => [STS] task 7: 531 anh moi, K=140 lop cu | N_c min 0.00 trung vi 0.00 | 140 lop < 5.0, dung 0 mau doi khang | nen 97.1%
+2026-11-09 11:21:05,165 [toolkit.py] => All params: 87226880
+2026-11-09 11:21:05,165 [toolkit.py] => Trainable params: 1428224
+2026-11-09 11:23:44,167 [RSIAT_adapter.py] => Task 7, Epoch 15/15 => Loss 3.983, Loss_c 3.135, Losses_rt 0.848, Train_accy 82.30, Test_accy 67.31
+2026-11-09 11:23:59,781 [sts.py] => [STS] task 7 buoc 1: alpha 10.0, phan du chung 0.773 | lop bam rieng 86/140 | nen 99.4% | ||buoc mean|| TB 1.9548
+2026-11-09 11:23:59,782 [sts.py] => [STS] task 7 xong: 1 buoc, dung 1021 mau doi khang, lop bam rieng o buoc cuoi 86/140
+2026-11-09 11:24:08,948 [sts.py] => [STS] task 7 buoc 1: alpha 10.0, phan du chung 0.713 | lop bam rieng 0/140 | nen 97.1% | ||buoc mean|| TB 0.7265
+2026-11-09 11:24:08,949 [sts.py] => [STS] task 7 xong: 1 buoc, dung 0 mau doi khang, lop bam rieng o buoc cuoi 0/140
+2026-11-09 11:24:30,062 [RSIAT_adapter.py] => [LBR] task 7: Gauss x' cho 20 lop moi (n0 = 50, tau = 256), |x'| tb 30.8
+2026-11-09 11:24:37,423 [RSIAT_adapter.py] => CA Task 7 o tang x' (LBR v2; 1024 mau/lop, kappa True, s 2.0): Test_accy 69.470
+2026-11-09 11:24:42,160 [trainer.py] => CNN: {'total': 69.47, '00-09': 55.84, '10-19': 75.51, '20-29': 71.72, '30-39': 68.6, '40-49': 81.25, '50-59': 63.46, '60-69': 71.43, '70-79': 77.08, '80-89': 65.43, '90-99': 66.13, '100-109': 75.0, '110-119': 74.32, '120-129': 58.33, '130-139': 73.26, '140-149': 68.42, '150-159': 52.94, 'old': 70.29, 'new': 62.2}
+2026-11-09 11:24:42,160 [trainer.py] => CNN top1 curve: [86.29, 84.44, 80.25, 79.37, 76.34, 74.67, 71.72, 69.47]
+2026-11-09 11:24:42,160 [trainer.py] => CNN top5 curve: [97.14, 96.39, 95.38, 94.13, 92.39, 90.97, 89.3, 88.62]
+2026-11-09 11:24:42,160 [trainer.py] => Average Accuracy (CNN): 77.81875000000001
+2026-11-09 11:24:42,160 [trainer.py] => All params: 87111168
+2026-11-09 11:24:42,161 [trainer.py] => Trainable params: 1312512
+2026-11-09 11:24:42,164 [RSIAT_adapter.py] => Learning on 160-180
+2026-11-09 11:27:47,793 [sts.py] => [STS] task 8: 571 anh moi, K=160 lop cu | N_c min 0.00 trung vi 8.26 | 160 lop < 5.0, dung 1269 mau doi khang | nen 97.8%
+2026-11-09 11:27:50,049 [sts.py] => [STS] task 8: 571 anh moi, K=160 lop cu | N_c min 0.00 trung vi 0.00 | 160 lop < 5.0, dung 0 mau doi khang | nen 96.2%
+2026-11-09 11:27:50,051 [toolkit.py] => All params: 87242240
+2026-11-09 11:27:50,051 [toolkit.py] => Trainable params: 1443584

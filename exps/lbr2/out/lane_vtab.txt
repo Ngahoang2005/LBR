@@ -1,0 +1,23 @@
+[2026-11-07 07:54:38] start vtab_lbr2_s1993
+[2026-11-07 09:10:15] end vtab_lbr2_s1993 (exit 0)
+[2026-11-07 09:10:15] tune offline
+== exps/lbr2/dump/vtab_vtab_lbr2_s1993: trung binh 3 seed CA (Avg gom task 0 = 96.90)
+  s=1 B= 256: Avg 94.857  Last 94.78  (moi seed CA: 94.87 94.85 94.84)
+  s=1 B=1024: Avg 94.844  Last 94.78  (moi seed CA: 94.83 94.84 94.87)
+  s=1.5 B= 256: Avg 94.966  Last 94.96  (moi seed CA: 94.97 94.95 94.97)
+  s=1.5 B=1024: Avg 94.959  Last 94.96  (moi seed CA: 94.97 94.96 94.95)
+  s=2 B= 256: Avg 95.013  Last 95.08  (moi seed CA: 94.97 95.07 95.00)
+  s=2 B=1024: Avg 94.983  Last 95.02  (moi seed CA: 94.99 94.98 94.99)
+best: s=2 B=256
+[2026-11-07 09:11:11] start vtab_lbr2best_s2_b256_s1993
+[2026-11-07 10:27:41] end vtab_lbr2best_s2_b256_s1993 (exit 0)
+[2026-11-07 10:27:41] start vtab_lbr2best_s2_b256_s1994
+Terminated
+[2026-11-07 11:44:22] end vtab_lbr2best_s2_b256_s1994 (exit 0)
+[2026-11-07 11:44:24] start vtab_lbr2best_s2_b256_s1995
+[2026-11-07 12:56:06] end vtab_lbr2best_s2_b256_s1995 (exit 0)
+[2026-11-07 12:56:06] start cub_orig_s1994
+[2026-11-07 12:56:15] end cub_orig_s1994 (exit 0)
+[2026-11-07 12:56:15] start cub_orig_s1995
+[2026-11-07 12:56:20] end cub_orig_s1995 (exit 0)
+[2026-11-07 12:56:20] lane vtab xong

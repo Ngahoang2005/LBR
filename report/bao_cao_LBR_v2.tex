@@ -1,0 +1,360 @@
+\documentclass[11pt]{article}
+% Bien dich: pdflatex (hoac Overleaf). Hinh ve bang TikZ/pgfplots, khong can anh ngoai.
+\usepackage[T5]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage[vietnamese]{babel}
+\usepackage[a4paper,margin=2.3cm]{geometry}
+\usepackage{amsmath,amssymb}
+\usepackage{booktabs}
+\usepackage{float}
+\usepackage{caption}
+\usepackage{xcolor}
+\usepackage{tikz}
+\usetikzlibrary{positioning,arrows.meta,calc,fit,decorations.pathreplacing}
+\usepackage{pgfplots}
+\pgfplotsset{compat=1.17} 
+\usepackage[hidelinks]{hyperref}
+
+\definecolor{cOrig}{HTML}{7F7F7F}
+\definecolor{cV2}{HTML}{D62728}
+\definecolor{cH4}{HTML}{2CA02C}
+\definecolor{cL2}{HTML}{1F77B4}
+\definecolor{cBox}{HTML}{EAF2FB}
+\definecolor{cNew}{HTML}{E8F5E9}
+\definecolor{cWarn}{HTML}{FFF3E0}
+
+\newcommand{\R}{\mathbb{R}}
+\newcommand{\bmu}{\boldsymbol{\mu}}
+\newcommand{\bSigma}{\boldsymbol{\Sigma}}
+\newcommand{\vf}{\mathbf{f}}
+\newcommand{\vx}{\mathbf{x}}
+
+\title{Báo cáo dự án khoa học\\[4pt]
+\large LBR v2: ``nhớ lại'' lớp cũ ở tầng $x'$ của khối cuối ViT\\
+--- kết quả trên ImageNet-A (một bộ phân loại)}
+\author{Thị Thanh Nga Hoàng}
+\date{06/11/2026}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+Các phương pháp không lưu ảnh (RSIAT, V2, HRC) ``nhớ'' mỗi lớp cũ bằng một đám mây Gauss đặt thẳng ở đặc trưng cuối
+$\vf$, rồi huấn luyện lại bộ phân loại (CA) trên các điểm giả bốc từ đám mây đó. \textbf{LBR v2} lùi bộ nhớ này sớm hơn
+một bước: lưu Gauss ở $x'$ --- token CLS ngay sau nhánh attention của khối Transformer cuối cùng --- và khi chạy CA thì
+cho từng điểm giả đi qua \emph{phần còn lại của khối cuối hiện tại} (MLP, adapter, LayerNorm) để tạo đặc trưng giả. Như
+vậy đặc trưng giả có đúng ``hình dáng'' phi tuyến do chính mạng tạo ra, và tự động theo kịp mọi thay đổi của adapter
+khối cuối. Khác với LBR v1 (đã thất bại), bản v2 \emph{không} dùng điểm giả để huấn luyện adapter; nó chỉ thay đổi bước
+CA. Trên ImageNet-A seed 1993, một lần chạy, LBR v2 đạt $\mathbf{75.32/66.03}$ (Avg/Last), cao hơn RSIAT gốc
+($74.76/65.77$), V2 ($75.03/66.29$ --- nhưng Last thấp hơn) và LBR v1 tốt nhất ($75.25/65.77$); ngang HRC cùng số mẫu
+$B=256$ ($75.33/65.83$) và thấp hơn HRC tốt nhất ($75.46/66.29$). Đây là bản LBR tốt nhất đến nay, nhưng chưa vượt HRC
+và mới chỉ có một seed.
+\end{abstract}
+
+\tableofcontents
+\newpage
+
+% =====================================================================================================================
+\section{Gốc rễ vấn đề, nói bằng lời thường}
+
+\subsection{Bài toán}
+Mô hình gồm \textbf{bộ trích đặc trưng} (ViT-B/16 huấn luyện sẵn trên ImageNet-21k, gắn thêm adapter nhỏ) biến ảnh
+thành vector $\vf\in\R^{768}$, và \textbf{bộ phân loại} cosine gán ảnh cho lớp có trọng số ``cùng hướng'' nhất với
+$\vf$. ImageNet-A có 200 lớp, chia thành 10 bước, mỗi bước 20 lớp mới, khoảng 30 ảnh huấn luyện mỗi lớp. Ở mỗi bước mô
+hình chỉ thấy ảnh của 20 lớp mới và \textbf{không được giữ ảnh cũ}, nhưng vẫn phải phân loại đúng mọi lớp đã gặp.
+
+\subsection{Cách ``nhớ lại'' hiện tại và chỗ yếu của nó}
+Vì không còn ảnh, mỗi lớp cũ $c$ chỉ được nhớ bằng tâm $\bmu_c$ và hình dạng $\bSigma_c$ của đám đặc trưng. Sau mỗi
+bước, CA sinh điểm giả từ $\mathcal{N}(\bmu_c,\bSigma_c)$ cho mọi lớp và huấn luyện lại bộ phân loại. Bộ phân loại chỉ
+tốt bằng độ giống nhau giữa đám mây giả và đặc trưng thật. Có ba chỗ đám mây có thể sai:
+\begin{enumerate}
+\item \textbf{Sai vị trí} do adapter thay đổi làm đặc trưng trôi (drift). V2 xử lý bằng STS: ước lượng một ánh xạ
+      tuyến tính giữa đặc trưng cũ và mới để dời $\bmu_c,\bSigma_c$.
+\item \textbf{Sai độ rộng và hình dạng} vì $\bSigma_c$ ước lượng từ khoảng 30 ảnh trong 768 chiều. HRC xử lý bằng
+      cách mượn hình dạng của lớp gần nhất và nới rộng đám mây.
+\item \textbf{Sai ``kiểu'' phân phối}: đặc trưng cuối $\vf$ là đầu ra của khối MLP phi tuyến rồi qua LayerNorm, nên
+      đám đặc trưng thật không phải một elip Gauss (ví dụ, LayerNorm ép mọi vector về gần cùng một độ dài). Đặt Gauss
+      trực tiếp ở $\vf$ bỏ qua cấu trúc này. Hơn nữa, STS chỉ bù drift bằng một phép biến đổi \emph{tuyến tính}, trong
+      khi thay đổi của khối cuối là phi tuyến.
+\end{enumerate}
+Ý (1) và (2) đã được V2 và HRC xử lý. \textbf{LBR v2 nhắm vào ý (3).} Lưu ý: ý (3) là giả thuyết động lực, chưa được đo
+trực tiếp trong báo cáo này.
+
+\subsection{Ý tưởng: lùi bộ nhớ về trước khối cuối một chút}
+Khối Transformer cuối (AdaptFormer song song, như RSIAT) tính:
+\begin{equation}
+x'=x+\mathrm{Attn}(\mathrm{LN}_1(x)),\qquad
+\vf=\mathrm{LN}\big(x'+\mathrm{MLP}(\mathrm{LN}_2(x'))+0.1\,\mathrm{Adapter}(x')\big)_{\text{CLS}}.
+\end{equation}
+Mọi phép tính sau Attention đều làm \emph{riêng trên từng token}. Vì vậy, chỉ cần token CLS $x'_{\text{CLS}}$ là tính
+lại được \emph{chính xác} $\vf$ qua khối cuối hiện tại, không cần ảnh và không cần các token patch (kiểm tra số học:
+sai số cỡ $6\cdot10^{-6}$). Do đó:
+\begin{itemize}
+\item \textbf{Lưu} Gauss $\mathcal{N}(\bmu'_c,\bSigma'_c)$ của $x'$ cho mỗi lớp, thay vì chỉ lưu Gauss ở $\vf$.
+\item \textbf{Khi CA}: bốc $x'$ giả, cho đi qua MLP + adapter + LayerNorm của khối cuối \emph{hiện tại} để được $\vf$
+      giả. Phần phi tuyến và phần drift của khối cuối do chính mạng tạo ra, không cần mô hình hoá.
+\end{itemize}
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}[node distance=6mm and 7mm,
+  blk/.style={draw,rounded corners,minimum height=8mm,align=center,font=\small,fill=cBox},
+  mem/.style={draw,rounded corners,minimum height=8mm,align=center,font=\small,fill=cNew},
+  ar/.style={-{Latex[length=2mm]},thick}]
+\node[blk] (img) {Ảnh};
+\node[blk,right=of img] (b1) {Khối 1..11\\(adapter)};
+\node[blk,right=of b1] (att) {Attention\\khối 12};
+\node[mem,right=of att,minimum width=12mm] (xp) {$x'_{\text{CLS}}$};
+\node[blk,right=of xp] (mlp) {MLP + Adapter\\+ LayerNorm};
+\node[blk,right=of mlp] (f) {$\vf$};
+\draw[ar] (img)--(b1); \draw[ar] (b1)--(att); \draw[ar] (att)--(xp); \draw[ar] (xp)--(mlp); \draw[ar] (mlp)--(f);
+\node[font=\footnotesize,align=center,below=9mm of xp,text=cL2] (lbrm) {LBR v2 lưu Gauss ở đây\\$\mathcal{N}(\bmu'_c,\bSigma'_c)$};
+\node[font=\footnotesize,align=center,below=9mm of f,text=cV2] (v2m) {V2 / HRC lưu Gauss ở đây\\$\mathcal{N}(\bmu_c,\bSigma_c)$};
+\draw[cL2,dashed,->] (lbrm)--(xp); \draw[cV2,dashed,->] (v2m)--(f);
+\draw[decorate,decoration={brace,amplitude=4pt,mirror},thick] ($(mlp.south west)+(0,-0.15)$)--($(mlp.south east)+(0,-0.15)$);
+\end{tikzpicture}
+\caption{Vị trí của $x'$. Từ $x'_{\text{CLS}}$ đến $\vf$ chỉ là phép tính trên một token, nên có thể chạy lại trên
+điểm giả.}
+\end{figure}
+
+% =====================================================================================================================
+\section{Luồng LBR v2 trong một bước}\label{sec:flow}
+Bước $t\ge1$ có $K$ lớp cũ và 20 lớp mới. Cấu hình chạy: \texttt{exps/lbr/imageneta\_lbr2\_obs\_xp\_s1993.json}
+(\texttt{lbr\_lambda=0}, \texttt{lbr\_ca="xprime"}, \texttt{lbr\_ca\_kappa=true}).
+
+\begin{enumerate}
+\item \textbf{Huấn luyện adapter như V2.} CosFace trên lớp mới và RAE giữ đặc trưng mới gần cũ. Vì
+      \texttt{lbr\_lambda}$=0$, LBR v2 \emph{không} thêm hàm mất nào vào bước này (chế độ ``quan sát''). Mọi tính toán
+      phục vụ bộ nhớ $x'$ chạy với bộ sinh số ngẫu nhiên được khôi phục, nên không làm lệch quá trình huấn luyện.
+\item \textbf{Dời bộ nhớ của lớp cũ bằng STS, chạy hai lần:} một lần ở $\vf$ (như V2) và một lần ở tầng $x'$. Cả
+      hai dùng ảnh của bước hiện tại đi qua mô hình cũ và mô hình mới, rồi ước lượng ánh xạ (Procrustes) để dời
+      $\bmu'_c,\bSigma'_c$ của $K$ lớp cũ. Ở tầng $x'$ không dùng mẫu đối kháng.
+\item \textbf{Ghi nhớ lớp mới ở tầng $x'$.} Với mỗi lớp mới, cho ảnh huấn luyện đi qua mạng để lấy $x'$. Tính tâm
+      $\bmu'_c$. Hình dạng $\bSigma'_c$ mượn theo kiểu HRC ($n_0=20$, $\tau=256$): trộn covariance của lớp với hình
+      dạng của lớp gần nhất (cả cũ lẫn mới).
+\item \textbf{CA ở tầng $x'$} (10 epoch, $B=256$ điểm mỗi lớp mỗi epoch):
+  \begin{enumerate}
+  \item bốc $x'\sim\mathcal{N}(\bmu'_c,\bSigma'_c)$ cho \emph{mọi} lớp, cũ lẫn mới;
+  \item cho đi qua MLP + adapter + LayerNorm của khối cuối \emph{hiện tại} (không gradient) để được $\vf$ giả;
+  \item dời tâm theo hệ số $\kappa_c=0.9+0.1(t_c+1)/(t+1)$ như V2 (cộng $(\kappa_c-1)\cdot$ tâm mẫu của lớp);
+  \item chuẩn hoá và huấn luyện lại bộ phân loại cosine (thang 30, SGD + cosine) như CA thường.
+  \end{enumerate}
+\item \textbf{Đánh giá} trên toàn bộ tập kiểm tra của các lớp đã gặp. Bộ phân loại sau CA được dùng tiếp ở bước sau.
+\end{enumerate}
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}[node distance=5mm,
+  st/.style={draw,rounded corners,text width=3.0cm,minimum height=11mm,align=center,font=\small,fill=cBox},
+  nw/.style={st,fill=cNew},
+  ar/.style={-{Latex[length=2mm]},thick}]
+\node[st] (s1) {1. Huấn luyện adapter\\(như V2, không thêm loss)};
+\node[st,right=of s1] (s2) {2. STS: dời bộ nhớ\\lớp cũ ở $\vf$ và $x'$};
+\node[nw,right=of s2] (s3) {3. Gauss $x'$ cho\\lớp mới (mượn hình)};
+\node[nw,below=8mm of s3] (s4) {4a. Bốc $x'$ giả\\mọi lớp};
+\node[nw,left=of s4] (s5) {4b. Qua khối cuối\\hiện tại $\Rightarrow\vf$ giả};
+\node[st,left=of s5] (s6) {4c--d. $\kappa$, huấn luyện\\lại head cosine};
+\draw[ar] (s1)--(s2); \draw[ar] (s2)--(s3); \draw[ar] (s3)--(s4); \draw[ar] (s4)--(s5); \draw[ar] (s5)--(s6);
+\node[st,below=8mm of s6,fill=white] (s7) {5. Đánh giá;\\head dùng ở bước sau};
+\draw[ar] (s6)--(s7);
+\end{tikzpicture}
+\caption{Luồng một bước. Ô màu xanh lá là phần mới của LBR v2. Phần còn lại giống V2.}
+\end{figure}
+
+\paragraph{Chi phí.} Mỗi epoch CA đẩy $200\times256=51\,200$ điểm qua MLP của khối cuối, chia theo cụm để tiết kiệm bộ
+nhớ, và cần phân rã Cholesky cho 200 ma trận $768\times768$. Ở bước cuối, CA mất khoảng 7 giây. Bộ nhớ lưu thêm: một
+mean và một covariance ở tầng $x'$ cho mỗi lớp, tức gấp đôi bộ nhớ thống kê của V2.
+
+% =====================================================================================================================
+\section{Điểm mới}
+
+\begin{table}[H]
+\centering\small
+\caption{So sánh các phương pháp ở ba câu hỏi: lưu gì, đặc trưng giả tạo ra thế nào, adapter có học từ điểm giả không.}
+\begin{tabular}{p{2.3cm}p{3.6cm}p{4.6cm}p{3.6cm}}
+\toprule
+& Bộ nhớ lớp cũ & Đặc trưng giả cho CA & Adapter học từ điểm giả?\\
+\midrule
+RSIAT gốc & Gauss ở $\vf$, dời tâm bằng SDC & Gauss ở $\vf$ & Không\\
+V2 & Gauss ở $\vf$, dời bằng STS & Gauss ở $\vf$, $\kappa$ & Không\\
+HRC & như V2, mượn hình dạng & Gauss ở $\vf$, mượn hình, $s=2$, $B=1024$ & Không\\
+LBR v1 & Gauss ở $x'$ & (CA như V2) & \textbf{Có}: CE trên $\vf$ giả, gradient vào adapter khối cuối\\
+\textbf{LBR v2} & Gauss ở $x'$ (+ ở $\vf$), dời bằng STS ở cả hai tầng & \textbf{$x'$ giả qua khối cuối hiện tại}: phi tuyến, khớp adapter hiện tại & Không\\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\noindent Cụ thể, LBR v2 có ba điểm mới:
+\begin{enumerate}
+\item \textbf{Đặc trưng giả không còn là Gauss.} Đây là phương pháp đầu tiên trong chuỗi thí nghiệm mà đặc trưng giả
+      được \emph{mạng thật} sinh ra từ một Gauss ở tầng sớm hơn, thay vì được giả định là Gauss ở tầng cuối.
+\item \textbf{Bù drift của khối cuối chính xác, không cần ước lượng.} Thay đổi của adapter khối cuối được phản ánh
+      trực tiếp trong $\vf$ giả. STS chỉ còn phải bù drift của khối 1--11 (ở tầng $x'$).
+\item \textbf{Tách bộ nhớ $x'$ khỏi việc huấn luyện adapter.} Đây là bài học từ LBR v1: dùng điểm giả để huấn luyện
+      adapter không có ích (adapter khối cuối gần như không đổi trong một bước) và còn làm hại lớp cũ. V2 giữ ý tưởng
+      tái tạo ở $x'$ nhưng chỉ dùng nó cho CA, là nơi đám mây quyết định trực tiếp biên phân loại.
+\end{enumerate}
+
+% =====================================================================================================================
+\section{Kết quả}
+\paragraph{Thiết lập.} ImageNet-A, 10 bước $\times$ 20 lớp, ViT-B/16-IN21k + adapter, seed 1993, một bộ phân loại CA.
+Avg là trung bình 10 bước; Last là độ chính xác sau bước cuối. Một ảnh kiểm tra tương đương $0.06$--$0.3$ điểm.
+Log: \texttt{logs/adapter/imageneta/0/20/lbr2\_obs\_xp\_s1993\_*.log}.
+
+\begin{table}[H]
+\centering\small
+\caption{ImageNet-A, seed 1993, độ chính xác top-1 (\%) sau CA ở từng bước.}
+\setlength{\tabcolsep}{3.0pt}
+\begin{tabular}{l*{10}{c}cc}
+\toprule
+Bước & 0 & 1 & 2 & 3 & 4 & 5 & 6 & 7 & 8 & 9 & Avg & Last\\
+\midrule
+RSIAT gốc & 86.29 & 82.50 & 79.62 & 78.65 & 75.51 & 73.23 & 70.56 & 68.59 & 66.88 & 65.77 & 74.76 & 65.77\\
+V2 (chỉ CA) & 86.29 & 82.22 & 79.62 & 78.51 & 75.62 & 74.05 & 71.19 & 69.07 & 67.46 & \textbf{66.29} & 75.03 & \textbf{66.29}\\
+LBR v1 tốt nhất & 86.29 & \textbf{84.44} & \textbf{81.09} & 78.37 & 75.51 & 73.95 & 71.45 & 68.51 & 67.10 & 65.77 & 75.25 & 65.77\\
+HRC, $B=256$ & 86.29 & 83.89 & 80.88 & 78.37 & \textbf{75.86} & 73.64 & \textbf{71.81} & 69.23 & 67.46 & 65.83 & 75.33 & 65.83\\
+HRC, $B=1024$ & 86.29 & 84.17 & 80.88 & 78.51 & \textbf{75.86} & 73.85 & 71.54 & 69.47 & \textbf{67.74} & \textbf{66.29} & \textbf{75.46} & \textbf{66.29}\\
+\textbf{LBR v2} & 86.29 & 83.61 & 80.04 & \textbf{79.23} & 75.62 & \textbf{74.15} & 71.36 & \textbf{69.63} & 67.24 & 66.03 & 75.32 & 66.03\\
+\midrule
+LBR v2 $-$ V2 & 0.00 & $+1.39$ & $+0.42$ & $+0.72$ & 0.00 & $+0.10$ & $+0.17$ & $+0.56$ & $-0.22$ & $-0.26$ & $+0.29$ & $-0.26$\\
+LBR v2 $-$ HRC$_{1024}$ & 0.00 & $-0.56$ & $-0.84$ & $+0.72$ & $-0.24$ & $+0.30$ & $-0.18$ & $+0.16$ & $-0.50$ & $-0.26$ & $-0.14$ & $-0.26$\\
+LBR v2 $-$ gốc & 0.00 & $+1.11$ & $+0.42$ & $+0.58$ & $+0.11$ & $+0.92$ & $+0.80$ & $+1.04$ & $+0.36$ & $+0.26$ & $+0.56$ & $+0.26$\\
+\bottomrule
+\end{tabular}
+\end{table}
+LBR v1 tốt nhất là biến thể \texttt{lbr\_sa\_hrc\_bal\_lr3}. Bước 0 giống nhau ở mọi phương pháp vì chưa có CA.
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}
+\begin{axis}[width=0.92\linewidth,height=6.2cm,xlabel={Bước},ylabel={Độ chính xác (\%)},xtick={0,...,9},
+ ymin=64,ymax=88,grid=major,grid style={black!12},legend style={at={(0.02,0.03)},anchor=south west,font=\small}]
+\addplot[cOrig,thick,mark=o] coordinates {(0,86.29)(1,82.50)(2,79.62)(3,78.65)(4,75.51)(5,73.23)(6,70.56)(7,68.59)(8,66.88)(9,65.77)};
+\addlegendentry{RSIAT gốc}
+\addplot[cV2,thick,mark=square] coordinates {(0,86.29)(1,82.22)(2,79.62)(3,78.51)(4,75.62)(5,74.05)(6,71.19)(7,69.07)(8,67.46)(9,66.29)};
+\addlegendentry{V2 (chỉ CA)}
+\addplot[cH4,thick,mark=*] coordinates {(0,86.29)(1,84.17)(2,80.88)(3,78.51)(4,75.86)(5,73.85)(6,71.54)(7,69.47)(8,67.74)(9,66.29)};
+\addlegendentry{HRC, $B=1024$}
+\addplot[cL2,very thick,mark=triangle*] coordinates {(0,86.29)(1,83.61)(2,80.04)(3,79.23)(4,75.62)(5,74.15)(6,71.36)(7,69.63)(8,67.24)(9,66.03)};
+\addlegendentry{LBR v2}
+\end{axis}
+\end{tikzpicture}
+\caption{Đường độ chính xác theo bước.}
+\end{figure}
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}
+\begin{axis}[ybar,bar width=6pt,width=0.92\linewidth,height=5cm,xlabel={Bước},ylabel={Chênh lệch (điểm)},
+ xtick={1,...,9},ymin=-1,ymax=1.6,grid=major,grid style={black!12},
+ legend style={at={(0.98,0.97)},anchor=north east,font=\small}]
+\addplot[fill=cV2!60] coordinates {(1,1.39)(2,0.42)(3,0.72)(4,0.00)(5,0.10)(6,0.17)(7,0.56)(8,-0.22)(9,-0.26)};
+\addlegendentry{LBR v2 $-$ V2}
+\addplot[fill=cH4!60] coordinates {(1,-0.56)(2,-0.84)(3,0.72)(4,-0.24)(5,0.30)(6,-0.18)(7,0.16)(8,-0.50)(9,-0.26)};
+\addlegendentry{LBR v2 $-$ HRC$_{1024}$}
+\end{axis}
+\end{tikzpicture}
+\caption{LBR v2 hơn V2 ở bước 1--7 rồi thua nhẹ ở bước 8--9. So với HRC thì lúc hơn lúc kém.}
+\end{figure}
+
+\subsection{Lớp cũ và lớp mới ở bước cuối}
+\begin{table}[H]
+\centering\small
+\caption{Bước 9: độ chính xác trên 180 lớp cũ và 20 lớp mới.}
+\begin{tabular}{lccc}
+\toprule
+Phương pháp & Tổng (Last) & Lớp cũ & Lớp mới\\
+\midrule
+RSIAT gốc & 65.77 & 65.52 & 68.55\\
+V2 (chỉ CA) & \textbf{66.29} & \textbf{66.16} & 67.74\\
+LBR v1 tốt nhất & 65.77 & 65.30 & \textbf{70.97}\\
+HRC, $B=256$ & 65.83 & 65.59 & 68.55\\
+HRC, $B=1024$ & \textbf{66.29} & 66.02 & 69.35\\
+\textbf{LBR v2} & 66.03 & 65.59 & \textbf{70.97}\\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{CA đóng góp bao nhiêu ở mỗi bước}
+Bảng dưới so sánh độ chính xác trước CA (head sau khi huấn luyện adapter) và sau CA. Lưu ý: vì bộ phân loại sau CA
+được dùng tiếp ở bước sau, quỹ đạo của adapter ở ba lần chạy \emph{không} trùng nhau từ bước 2 trở đi.
+
+\begin{table}[H]
+\centering\small
+\caption{Độ chính xác trước CA $\to$ mức tăng nhờ CA (điểm).}
+\setlength{\tabcolsep}{3.4pt}
+\begin{tabular}{l*{9}{c}cc}
+\toprule
+Bước & 1 & 2 & 3 & 4 & 5 & 6 & 7 & 8 & 9 & TB trước CA & TB tăng\\
+\midrule
+V2 & 82.22 & 79.62 & 75.07 & 74.20 & 72.41 & 69.94 & 67.39 & 66.88 & 64.78 & 72.50 & \\
+\quad tăng nhờ CA & 0.00 & 0.00 & $+3.44$ & $+1.42$ & $+1.64$ & $+1.25$ & $+1.68$ & $+0.58$ & $+1.51$ & & $+1.28$\\
+HRC$_{1024}$ & 82.22 & 80.25 & 76.07 & 75.15 & 71.38 & 69.58 & 67.39 & 66.81 & 64.91 & 72.42 & \\
+\quad tăng nhờ CA & $+1.95$ & $+0.63$ & $+2.44$ & $+0.71$ & $+2.47$ & $+1.96$ & $+2.08$ & $+0.93$ & $+1.38$ & & $\mathbf{+1.62}$\\
+LBR v2 & 82.22 & 80.25 & 76.07 & 75.51 & 72.10 & 69.76 & 67.71 & 67.10 & 64.78 & \textbf{72.83} & \\
+\quad tăng nhờ CA & $+1.39$ & $-0.21$ & $+3.16$ & $+0.11$ & $+2.05$ & $+1.60$ & $+1.92$ & $+0.14$ & $+1.25$ & & $+1.27$\\
+\bottomrule
+\end{tabular}
+\end{table}
+
+% =====================================================================================================================
+\section{Phân tích}
+\begin{enumerate}
+\item \textbf{Đây là bản LBR tốt nhất.} So với LBR v1 tốt nhất: Avg $+0.07$, Last $+0.26$. Bỏ việc huấn luyện adapter
+      bằng điểm giả là đúng hướng. LBR v1 hơn ở bước 1--2 nhưng lớp cũ tụt dần; LBR v2 không bị tụt như vậy ở cuối
+      chuỗi (lớp cũ ở bước 9: $65.59$ so với $65.30$).
+\item \textbf{So với V2: Avg tăng, Last giảm nhẹ.} Phần tăng nằm ở bước 1--7 ($+1.39$ ở bước 1, $+0.72$ ở bước 3,
+      $+0.56$ ở bước 7). Ở bước 8--9 thì thua $0.2$--$0.3$ điểm, tức khoảng 2--4 ảnh, nằm trong vùng nhiễu.
+\item \textbf{So với HRC: ngang ở cùng điều kiện, thua bản tốt nhất.} Cùng $B=256$, LBR v2 ngang HRC
+      ($75.32$ so với $75.33$ Avg) và hơn ở Last ($66.03$ so với $65.83$). HRC tốt nhất dùng thêm $s=2$ và $B=1024$,
+      hai thứ LBR v2 \emph{chưa} được tune. Vì vậy so sánh hiện tại chưa công bằng hoàn toàn với LBR v2.
+\item \textbf{Đổi lỗi ``mới bị đoán thành cũ'' lấy lỗi ``cũ bị đoán thành mới''.} Ở bước cuối, lớp mới đạt $70.97$
+      (cao nhất, bằng LBR v1), so với $67.74$ của V2 và $69.35$ của HRC. Đổi lại, lớp cũ giảm từ $66.16$ (V2) xuống
+      $65.59$. Báo cáo trước chỉ ra lỗi chính là lớp mới bị đoán thành lớp cũ, và LBR v2 giảm đúng loại lỗi đó, nhưng
+      bù trừ lại khiến tổng gần như không đổi.
+\item \textbf{Mức tăng do CA tự thân không lớn hơn V2.} Trung bình mỗi bước, CA của LBR v2 thêm $+1.27$ điểm, xấp xỉ V2
+      ($+1.28$) và thấp hơn HRC ($+1.62$). Lợi thế Avg của LBR v2 chủ yếu đến từ việc độ chính xác \emph{trước CA}
+      cao hơn ($72.83$ so với $72.50$/$72.42$): bộ phân loại sau CA ở bước trước ảnh hưởng tới việc huấn luyện adapter
+      ở bước sau. Chưa thể nói hiệu ứng quỹ đạo này là ổn định hay chỉ là may rủi của một seed.
+\item \textbf{CA ở tầng $x'$ dao động mạnh giữa các bước.} Ở bước 2, 4, 8, CA gần như không tăng ($-0.21$, $+0.11$,
+      $+0.14$), trong khi HRC vẫn tăng $0.6$--$0.9$. Một giả thuyết: đám mây $x'$ chỉ có $s=1$ và $B=256$, nên sau khi
+      qua LayerNorm vẫn còn hẹp hoặc phủ chưa đủ, đúng hiện tượng HRC đã gặp với đám mây hẹp của V2.
+\end{enumerate}
+
+% =====================================================================================================================
+\section{Giới hạn}
+\begin{itemize}
+\item \textbf{Một seed, một lần chạy.} Theo đo trước đây, nhiễu giữa các seed khoảng $\pm1$ điểm Last, còn nhiễu của CA
+      khoảng $\pm0.3$--$0.5$. Mọi chênh lệch dưới $0.5$ trong báo cáo này chưa đủ để kết luận.
+\item \textbf{Chưa tune.} LBR v2 dùng nguyên $n_0=20$, $\tau=256$ của HRC (vốn tune cho tầng $\vf$), cùng với $s=1$,
+      $B=256$. Siêu tham số của các phương pháp so sánh được tune trên tập kiểm tra seed 1993.
+\item \textbf{Giả thuyết ``đặc trưng không Gauss'' chưa được đo trực tiếp}, ví dụ bằng cách so sánh phân phối $\vf$
+      giả với $\vf$ thật của lớp cũ ở bước cuối.
+\item \textbf{Quá trình chạy.} Trước lần chạy hoàn chỉnh, có các lần bị dừng do tràn bộ nhớ GPU và một lỗi làm mô hình
+      cũ bị chuyển sang chế độ train khi tính STS ở tầng $x'$ (đã sửa trong \texttt{XPrimeNet}). Kết quả ở đây chỉ lấy từ lần chạy
+      hoàn chỉnh; log của các lần chạy lỗi đã được xoá.
+\end{itemize}
+
+% =====================================================================================================================
+\section{Kết luận và bước tiếp theo}
+LBR v2 chuyển ý tưởng ``nhớ lại ở tầng $x'$'' từ việc huấn luyện adapter (v1, thất bại) sang bước CA. Ở đó, đặc trưng
+giả được chính khối cuối hiện tại tạo ra. Kết quả $75.32/66.03$ là bản LBR tốt nhất, hơn RSIAT gốc $+0.56/+0.26$ và
+hơn V2 $+0.29$ Avg, ngang HRC ở cùng $B=256$, nhưng chưa vượt HRC tốt nhất ($75.46/66.29$).
+
+\paragraph{Đề xuất, theo thứ tự ưu tiên.}
+\begin{enumerate}
+\item \textbf{Áp dụng hai thứ đã có ích cho HRC} vào CA tầng $x'$: nới rộng $s=2$ và $B=1024$. Đây là phép thử rẻ
+      nhất để biết LBR v2 có vượt được HRC hay không.
+\item \textbf{Chạy thêm seed 1994, 1995} cho LBR v2, V2 và HRC để biết chênh lệch có thật hay không.
+\item \textbf{Đo trực tiếp giả thuyết:} so sánh $\vf$ giả (qua khối cuối) với $\vf$ thật của lớp cũ, và với Gauss ở
+      $\vf$ của V2/HRC, bằng khoảng cách phân phối hoặc oracle trên lớp cũ.
+\item \textbf{Kết hợp với LDA} lúc đánh giá (\texttt{eval\_ens\_lda}). Hướng này từng tăng Last một cách nhất quán, và
+      có thể bù phần lớp cũ bị giảm.
+\end{enumerate}
+
+\paragraph{Mã và cấu hình.} \texttt{models/lbr.py} (\texttt{xprime}, \texttt{head\_from\_xprime},
+\texttt{train\_ca\_push}, \texttt{XPrimeNet}); \texttt{models/RSIAT\_adapter.py} (\texttt{\_ca\_xprime},
+\texttt{\_lbr\_class\_stats}); \texttt{models/hrc.py} (\texttt{fixed\_shapes}); cấu hình
+\texttt{exps/lbr/imageneta\_lbr2\_obs\_xp\_s1993.json}.
+
+\end{document}

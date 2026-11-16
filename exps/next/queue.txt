@@ -1,0 +1,24 @@
+[2026-11-12 20:49:09] start imageneta_rsiat_s2shrink_s1993 (lan 1, GPU trong 23734 MiB)
+[2026-11-12 21:26:21] end imageneta_rsiat_s2shrink_s1993 (exit 0)
+[2026-11-12 21:26:51] imageneta_rsiat_s2shrink_s1993 XONG: 75.303 -> ../RSIAT/logs/adapter/imageneta/0/20/rsiat_s2shrink_s1993_1993_pretrained_vit_b16_224_in21k_adapter.log
+[2026-11-12 21:26:51] start imageneta_rsiat_s1994 (lan 1, GPU trong 23734 MiB)
+[2026-11-12 22:04:31] end imageneta_rsiat_s1994 (exit 0)
+[2026-11-12 22:05:01] imageneta_rsiat_s1994 XONG: 72.182 -> ../RSIAT/logs/adapter/imageneta/0/20/rsiat_s1994_1994_pretrained_vit_b16_224_in21k_adapter.log
+[2026-11-12 22:05:01] start imageneta_rsiat_s2shrink_s1994 (lan 1, GPU trong 23734 MiB)
+[2026-11-12 22:43:25] end imageneta_rsiat_s2shrink_s1994 (exit 0)
+[2026-11-12 22:43:55] imageneta_rsiat_s2shrink_s1994 XONG: 72.812 -> ../RSIAT/logs/adapter/imageneta/0/20/rsiat_s2shrink_s1994_1994_pretrained_vit_b16_224_in21k_adapter.log
+[2026-11-12 22:43:55] start imageneta_rsiat_s1995 (lan 1, GPU trong 23734 MiB)
+[2026-11-12 23:22:20] end imageneta_rsiat_s1995 (exit 0)
+[2026-11-12 23:22:50] imageneta_rsiat_s1995 XONG: 71.1 -> ../RSIAT/logs/adapter/imageneta/0/20/rsiat_s1995_1995_pretrained_vit_b16_224_in21k_adapter.log
+[2026-11-12 23:22:50] start imageneta_rsiat_s2shrink_s1995 (lan 1, GPU trong 23734 MiB)
+[2026-11-13 00:00:25] end imageneta_rsiat_s2shrink_s1995 (exit 0)
+[2026-11-13 00:00:55] imageneta_rsiat_s2shrink_s1995 XONG: 71.23299999999999 -> ../RSIAT/logs/adapter/imageneta/0/20/rsiat_s2shrink_s1995_1995_pretrained_vit_b16_224_in21k_adapter.log
+[2026-11-13 00:00:55] start imageneta_lbr_split_ae_md1_s1994 (lan 1, GPU trong 23734 MiB)
+[2026-11-13 00:36:18] end imageneta_lbr_split_ae_md1_s1994 (exit 0, ok)
+grep: logs/adapter/imageneta/0/20/lbr_split_ae_md1_s1994_1993_pretrained_vit_b16_224_in21k_adapter.log: No such file or directory
+[2026-11-13 00:36:18] imageneta_lbr_split_ae_md1_s1994 KHONG XONG
+[2026-11-13 00:36:18] start imageneta_lbr_split_ae_md1_s1995 (lan 1, GPU trong 23734 MiB)
+[2026-11-13 01:12:44] end imageneta_lbr_split_ae_md1_s1995 (exit 0, ok)
+grep: logs/adapter/imageneta/0/20/lbr_split_ae_md1_s1995_1993_pretrained_vit_b16_224_in21k_adapter.log: No such file or directory
+[2026-11-13 01:12:44] imageneta_lbr_split_ae_md1_s1995 KHONG XONG
+[2026-11-13 01:12:44] xong buoc 1-2

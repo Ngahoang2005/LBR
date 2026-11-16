@@ -1,0 +1,610 @@
+\documentclass[11pt]{article}
+% Bien dich: pdflatex (hoac Overleaf). Moi hinh ve viet bang TikZ/pgfplots ngay trong file, khong can anh ngoai.
+\usepackage[T5]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage[vietnamese]{babel}
+\usepackage[a4paper,margin=2.3cm]{geometry}
+\usepackage{amsmath,amssymb}
+\usepackage{booktabs}
+\usepackage{array}
+\usepackage{float}
+\usepackage{caption}
+\usepackage{xcolor}
+\usepackage{tikz}
+\usetikzlibrary{positioning,arrows.meta,shapes.geometric,fit,calc}
+\usepackage{pgfplots}
+\pgfplotsset{compat=1.17}
+\usepackage[hidelinks]{hyperref}
+
+\definecolor{cOrig}{HTML}{7F7F7F}
+\definecolor{cV1}{HTML}{1F77B4}
+\definecolor{cV2}{HTML}{D62728}
+\definecolor{cV3}{HTML}{2CA02C}
+\definecolor{cBox}{HTML}{EAF2FB}
+\definecolor{cNew}{HTML}{FDECEA}
+\definecolor{cNew3}{HTML}{E8F5E9}
+
+\newcommand{\R}{\mathbb{R}}
+\newcommand{\bmu}{\boldsymbol{\mu}}
+\newcommand{\bSigma}{\boldsymbol{\Sigma}}
+\newcommand{\vf}{\mathbf{f}}
+\newcommand{\tr}{\operatorname{tr}}
+
+\title{Báo cáo dự án khoa học\\[4pt]
+\large Hai phiên bản tốt nhất hiện tại:\\
+V2 với tổ hợp bộ phân loại, và V3-specgrid với một bộ phân loại CA}
+\author{Thị Thanh Nga Hoàng}
+\date{November 2026}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+Báo cáo tổng hợp hai phiên bản cho kết quả cao nhất trong dự án học tăng dần theo lớp (CIL) không lưu mẫu cũ trên
+ViT-B/16 với adapter. (A) \textbf{Bản tốt nhất có tổ hợp} là \textbf{V2}: backbone RSIAT bỏ $\mathcal{L}_{RS}$ và
+$\mathcal{L}_{orth}$ (giữ RAE), bù drift bằng \textbf{STS} chạy một lần cuối mỗi task, và phân loại bằng tổ hợp z-score
+của ba bộ phân loại CA, LDA, AGM. Trên ImageNet-A seed 1993, V2 đạt $75.63/66.69$ (trung bình/task cuối) so với
+$74.76/65.77$ của RSIAT gốc; trung bình 3 seed $73.62/65.94$ so với $72.68/65.02$. (B) \textbf{Bản tốt nhất không tổ hợp}
+(chỉ bộ phân loại CA) là \textbf{V3-specgrid}: giữ nguyên backbone và STS của V2, nhưng covariance lớp mới được
+\emph{vay hình dạng} từ các lớp lân cận và cộng thêm \emph{độ bất định tích luỹ} do bù drift. Trên ImageNet-A seed 1993,
+CA của V3-specgrid đạt $75.13/65.96$, cao hơn CA của V2 ($75.03/66.29$) ở trung bình nhưng thấp hơn ở task cuối. Chênh lệch
+này nằm trong mức nhiễu của một seed; báo cáo nêu rõ điều đó.
+\end{abstract}
+
+\tableofcontents
+\newpage
+
+% =====================================================================================================================
+\section{Tóm tắt kết quả}\label{sec:summary}
+
+Mọi số trong báo cáo là độ chính xác top-1 (\%) trên tất cả các lớp đã thấy. ``Avg'' là trung bình qua các task, ``Last''
+là sau task cuối.
+
+\begin{table}[H]
+\centering\small
+\caption{Hai bản tốt nhất trên ImageNet-A, seed 1993 (Avg / Last). Cùng một backbone: hai bản cho đặc trưng test giống
+hệt nhau ở cả 10 task; khác biệt chỉ nằm ở thống kê lớp và bộ phân loại.}
+\label{tab:summary}
+\begin{tabular}{llcc}
+\toprule
+Loại & Phiên bản & Avg / Last & So với RSIAT gốc \\
+\midrule
+Tham chiếu & RSIAT gốc (CA) & 74.76 / 65.77 & -- \\
+\midrule
+\textbf{Có tổ hợp} & \textbf{V2}, z(CA)+z(LDA)+z(AGM) & \textbf{75.63 / 66.69} & $+0.87$ / $+0.92$ \\
+ & V3-specgrid, z(CA)+z(LDA)+z(AGM) & 75.54 / 65.77 & $+0.78$ / $\phantom{+}0.00$ \\
+\midrule
+\textbf{Không tổ hợp (CA)} & \textbf{V3-specgrid}, CA & \textbf{75.13} / 65.96 & $+0.37$ / $+0.19$ \\
+ & V2, CA & 75.03 / \textbf{66.29} & $+0.27$ / $+0.52$ \\
+ & V1, CA & 74.77 / 65.70 & $+0.01$ / $-0.07$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\paragraph{Đọc bảng.}
+\begin{itemize}
+\item \textbf{Có tổ hợp:} V2 là bản tốt nhất ở cả Avg và Last. V2 cũng là bản duy nhất đã chạy trên nhiều dataset và nhiều
+      seed (mục~\ref{sec:res-v2}).
+\item \textbf{Không tổ hợp:} V3-specgrid có Avg cao nhất ($75.13$, hơn V2 $+0.10$), nhưng V2 có Last cao hơn ($66.29$ so
+      với $65.96$). Trên ImageNet-A, một ảnh test tương ứng $0.06$--$0.3$ điểm tuỳ task, nên $+0.10$ ở Avg chưa phải
+      chênh lệch có ý nghĩa thống kê. V3-specgrid mới chạy một seed trên ImageNet-A.
+\item Nếu cần \emph{một} bản để báo cáo chính, V2 có tổ hợp là lựa chọn an toàn nhất.
+\end{itemize}
+
+% =====================================================================================================================
+\section{Bài toán và ký hiệu}\label{sec:setup}
+
+Dữ liệu đến theo $T$ task; task $t$ mang tập lớp $\mathcal{C}_t$ rời nhau và tập ảnh $\mathcal{D}_t$. Khi học task
+$t$ \emph{không} được giữ ảnh của các task trước (exemplar-free). Mô hình gồm backbone ViT-B/16 đông cứng với adapter
+học được, cho đặc trưng $\vf(x)\in\R^d$ ($d=768$). Sau mỗi task, mô hình phải phân loại đúng mọi lớp đã thấy
+$\mathcal{C}_{\le t}$.
+
+Với mỗi lớp $c$, ta lưu \emph{thống kê lớp}: mean $\bmu_c$ và covariance $\bSigma_c$ của đặc trưng, ước lượng từ
+$n_c$ ảnh train lúc lớp được học. Ảnh cũ không còn, nên khi adapter tiếp tục thay đổi ở task sau, đặc trưng ``trôi''
+(\emph{drift}) và thống kê đã lưu không còn khớp. Mọi bộ phân loại trong báo cáo được dựng từ $(\bmu_c,\bSigma_c)$,
+nên chất lượng của chúng phụ thuộc vào hai nguồn sai số:
+\begin{enumerate}
+\item[(I)] \textbf{biểu diễn}: các lớp có tách được trong không gian đặc trưng hiện tại hay không;
+\item[(II)] \textbf{ước lượng thống kê}: $(\bmu_c,\bSigma_c)$ đã lưu có đúng với đặc trưng hiện tại hay không.
+\end{enumerate}
+V2 và V3 giữ nguyên backbone (phần I) và chỉ tác động lên phần (II) và cách dùng thống kê.
+
+% =====================================================================================================================
+\section{Pipeline chung của hai bản}\label{sec:common}
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}[
+  box/.style={draw, rounded corners=2pt, fill=cBox, align=center, font=\small, minimum height=0.95cm, text width=2.5cm},
+  newbox/.style={box, fill=cNew},
+  v3box/.style={box, fill=cNew3},
+  arr/.style={-{Stealth[length=2.2mm]}, thick}]
+\node[box] (data) {Ảnh task $t$\\$\mathcal{D}_t$};
+\node[box, right=0.55cm of data] (train) {Huấn luyện adapter\\CosFace + RAE};
+\node[newbox, right=0.55cm of train] (sts) {STS cuối task:\\bám drift lớp cũ};
+\node[box, right=0.55cm of sts] (stat) {Thống kê lớp mới\\$\bmu_c,\bSigma_c$};
+\node[v3box, below=0.9cm of stat] (v3) {V3: vay hình dạng $S_c$\\+ bất định $U_c$};
+\node[box, below=0.9cm of sts] (ca) {CA: huấn luyện lại\\head trên mẫu Gauss};
+\node[newbox, below=0.9cm of train, text width=3.1cm] (ens) {V2: z(CA)+z(LDA)+z(AGM)\\V3-specgrid: chỉ CA};
+\draw[arr] (data) -- (train);
+\draw[arr] (train) -- (sts);
+\draw[arr] (sts) -- (stat);
+\draw[arr, dashed, cV3!70!black] (stat) -- (v3);
+\draw[arr] (v3) -- (ca);
+\draw[arr] (stat.south west) ++(0.1,0) |- ([yshift=0.25cm]ca.east);
+\draw[arr] (ca) -- (ens);
+\end{tikzpicture}
+\caption{Pipeline cho một task $t\ge1$. Ô đỏ nhạt là phần V2 thêm vào so với RSIAT (STS thay SDC; tổ hợp ba bộ phân
+loại). Ô xanh lá là phần V3-specgrid thêm vào so với V2 (thống kê lớp có độ bất định). Hai bản dùng chung mọi ô còn lại.}
+\label{fig:pipeline}
+\end{figure}
+
+\subsection{Backbone và hàm mất mát}
+Backbone giống RSIAT \cite{ssiat}: ViT-B/16 tiền huấn luyện ImageNet-21k, đông cứng, cộng adapter (FFN thắt cổ chai, 64
+chiều) ở mỗi khối. Head là bộ phân loại cosine. Ở mỗi task, adapter được học với:
+\begin{equation}
+\mathcal{L} = \mathcal{L}_{\text{CosFace}} + \beta\,\mathcal{L}_{\text{RAE}},
+\end{equation}
+\begin{itemize}
+\item $\mathcal{L}_{\text{CosFace}}$ \cite{cosface}: cross-entropy với lề cosine $m$, hệ số $s$, chỉ tính trên logit của
+      lớp mới (lớp cũ không còn ảnh).
+\item $\mathcal{L}_{\text{RAE}}$: bộ tự mã hoá dư $g(u)=u+\sigma(\mathrm{Dec}(\mathrm{Enc}(u)))$ học chung, ràng buộc đặc
+      trưng mới vẫn tái tạo được đặc trưng của mô hình trước. Đây là cơ chế giữ duy nhất của backbone; bỏ RAE làm mất
+      $3.6$ điểm ở task cuối trên ImageNet-A (đã kiểm chứng ở báo cáo V2).
+\end{itemize}
+So với RSIAT gốc, \textbf{cả hai bản đều bỏ} $\mathcal{L}_{RS}$ (lề quan hệ cặp, task 0) và $\mathcal{L}_{orth}$
+($\lambda_{RS}=\gamma=0$). Hai thành phần này không cải thiện kết quả khi đã có các bước sau và làm pipeline phức tạp
+hơn; mã V3 có \texttt{assert} để đảm bảo điều này.
+
+\subsection{Thống kê lớp mới}
+Sau khi học task $t$, với mỗi lớp mới $c\in\mathcal{C}_t$ có $n_c$ ảnh train ($n_c\approx30$ trên ImageNet-A):
+\begin{equation}
+\bmu_c=\frac1{n_c}\sum_i \vf(x_i),\qquad \hat\bSigma_c=\frac1{n_c-1}\sum_i(\vf(x_i)-\bmu_c)(\vf(x_i)-\bmu_c)^\top.
+\end{equation}
+V2 dùng $\bSigma_c=\hat\bSigma_c+10^{-3}I$. Vì $n_c\ll d=768$, $\hat\bSigma_c$ có hạng tối đa $n_c-1$: covariance suy biến
+ở hơn $96\%$ số chiều. Đây là điểm V3 sửa (mục~\ref{sec:v3}).
+
+\subsection{STS: bám drift của thống kê lớp cũ}\label{sec:sts}
+RSIAT dùng SDC \cite{sdc}: dời mean lớp cũ theo trung bình có trọng số độ dịch của ảnh mới. SDC có hai điểm yếu: trọng
+số không phân biệt ảnh mới nào thực sự gần lớp cũ, và covariance lớp cũ không được cập nhật. STS (Self-Tracking
+Statistics) thay SDC, chạy \textbf{một lần cuối mỗi task}, với các bước sau.
+
+\paragraph{Bước 1: tập dò.} Đưa ảnh của task $t$ qua mô hình trước ($\vf_{t-1}$) và mô hình hiện tại ($\vf_t$), thu
+cặp $(\vf_{t-1}(x),\vf_t(x))$. Với lớp cũ có quá ít ảnh liên quan (khối lượng $N_c<5$), sinh thêm $16$ mẫu đối kháng
+theo ADC \cite{adc}: đẩy ảnh mới về phía $\bmu_c$ trong không gian cũ bằng $10$ bước gradient, bước $2/255$.
+
+\paragraph{Bước 2: bước E có thành phần nền.} Ảnh mới thường không thuộc lớp cũ nào. Dùng mô hình trộn gồm các Gauss
+lớp cũ $\mathcal{N}(\bmu_c,\bSigma_c)$ và một thành phần nền có xác suất tiên nghiệm $\pi_0=0.5$:
+\begin{equation}
+r_{ic}=\frac{\pi_c\,\mathcal{N}(\vf_{t-1}(x_i);\bmu_c,\bSigma_c)^{\eta}}
+{\pi_0\,p_0(x_i)+\sum_{c'}\pi_{c'}\,\mathcal{N}(\vf_{t-1}(x_i);\bmu_{c'},\bSigma_{c'})^{\eta}},\qquad \eta=0.3.
+\end{equation}
+Số mũ $\eta<1$ làm mềm likelihood trong không gian $768$ chiều. Ảnh không gần lớp cũ nào được nền ``hấp thụ'' thay vì bị
+ép gán cho lớp gần nhất. $N_c=\sum_i r_{ic}$ là khối lượng ảnh liên quan tới lớp $c$.
+
+\paragraph{Bước 3: ánh xạ drift.} Khớp ánh xạ toàn cục $\vf_t\approx \vf_{t-1}(I+B)+b$ bằng Procrustes \cite{procrustes}
+(phần quay trực giao) trên các cặp có trọng số, với độ co $\alpha\in\{10^{-2},\dots,10^{2}\}$ chọn bằng split-half: khớp
+trên một nửa tập dò, đo sai số dự đoán trên nửa kia. Với \texttt{procrustes}, mọi lớp dùng chung ánh xạ toàn cục; dịch
+chuyển riêng từng lớp co về ánh xạ chung với $n_0=50$.
+
+\paragraph{Bước 4: vận chuyển.} Mean và covariance lớp cũ đi qua cùng ánh xạ $A=I+B$:
+\begin{equation}
+\bmu_c\leftarrow A^\top\bmu_c+b,\qquad \bSigma_c\leftarrow A^\top\bSigma_c A.
+\end{equation}
+Khác SDC, covariance cũng được cập nhật. Đây là lý do LDA và AGM (hai bộ phân loại dùng covariance) tăng nhiều nhất từ V1
+lên V2 ($+0.66$ và $+0.85$ ở task cuối).
+
+\subsection{Bộ phân loại CA}
+Theo SLCA \cite{slca}, head cosine được huấn luyện lại $10$ epoch trên mẫu Gauss sinh từ thống kê của mọi lớp đã thấy:
+$\tilde\vf\sim\mathcal{N}(\kappa_c\bmu_c,\bSigma^{\text{head}}_c)$, $256$ mẫu mỗi lớp mỗi epoch. Hệ số co mean
+$\kappa_c=0.9+\delta_c$ với $\delta_c=0.1\,(t_c+1)/(t+1)$, trong đó $t_c$ là task học lớp $c$: lớp càng cũ, mean càng
+bị co về gốc, bù cho việc thống kê của lớp cũ kém tin cậy hơn. V2 dùng $\bSigma^{\text{head}}_c=\bSigma_c$; V3-specgrid
+dùng covariance dự đoán $\bSigma^{\text{pred}}_c$ (mục~\ref{sec:v3-pred}).
+
+% =====================================================================================================================
+\section{Bản A -- V2 với tổ hợp ba bộ phân loại}\label{sec:v2}
+
+\subsection{Động cơ}
+Ba bộ phân loại dựng từ cùng $(\bmu_c,\bSigma_c)$ nhưng dùng chúng theo cách khác nhau, nên sai số của chúng không
+trùng nhau. Tổ hợp tận dụng điều này mà không tốn thêm huấn luyện backbone.
+
+\subsection{Ba bộ phân loại}
+\paragraph{CA.} Như mục trên; logit $\ell^{CA}_c(x)=\cos(\vf(x),w_c)$.
+
+\paragraph{LDA.} Phân tích biệt thức tuyến tính \cite{esl} với covariance gộp, chính quy hoá ridge:
+\begin{equation}
+\bar\bSigma=\frac1{|\mathcal{C}_{\le t}|}\sum_c\bSigma_c,\quad
+\bSigma_\lambda=\bar\bSigma+\lambda I,\ \lambda=\tfrac1d\tr\bar\bSigma,\quad
+\ell^{LDA}_c(x)=\bmu_c^\top\bSigma_\lambda^{-1}\vf(x)-\tfrac12\bmu_c^\top\bSigma_\lambda^{-1}\bmu_c.
+\end{equation}
+LDA là bộ phân loại Bayes khi các lớp là Gauss cùng covariance; nó không cần huấn luyện và chỉ phụ thuộc vào thống kê.
+
+\paragraph{AGM (Analytic Gaussian-Moment head).} Hồi quy ridge trên đặc trưng ngẫu nhiên \cite{rahimi}
+$\phi(\vf)=[\vf;\ \mathrm{ReLU}(W\vf);\ 10]\in\R^{M}$, $M=4769$, $W$ ngẫu nhiên cố định. Thay vì sinh mẫu, các mô-men cần
+cho nghiệm đóng được tính \emph{chính xác} từ Gauss của mỗi lớp (kỳ vọng của ReLU của biến Gauss có dạng đóng):
+\begin{equation}
+G=\sum_c n_c\,\mathbb{E}_{\vf\sim\mathcal{N}(\bmu_c,\bSigma_c)}\!\left[\phi\phi^\top\right],\quad
+H_{:,c}=n_c\,\mathbb{E}[\phi],\quad
+\Omega=(G+\lambda I)^{-1}H,\quad \lambda=0.1\,\tfrac{\tr G}{M}.
+\end{equation}
+Logit $\ell^{AGM}(x)=\phi(\vf(x))^\top\Omega$. AGM là bộ phân loại phi tuyến, không có nhiễu lấy mẫu như CA.
+
+\subsection{Tổ hợp z-score}
+Ba loại logit có thang đo khác nhau (cosine, log-mật độ, hồi quy), nên trước khi cộng, mỗi logit được chuẩn hoá theo
+từng ảnh:
+\begin{equation}
+z(\ell)_c=\frac{\ell_c-\mathrm{mean}_{c'}\ell_{c'}}{\mathrm{std}_{c'}\ell_{c'}},\qquad
+\hat y(x)=\arg\max_c\left[z(\ell^{CA})_c+z(\ell^{LDA})_c+z(\ell^{AGM})_c\right].
+\end{equation}
+Trọng số bằng nhau, không có tham số nào chọn trên tập test.
+
+\subsection{Cấu hình}
+\texttt{exps/sts/imageneta\_raests\_end\_s1993.json} (ImageNet-A); \texttt{exps/v2/*} cho các dataset khác. Các khoá
+chính: \texttt{rae: true, sts: true, sts\_freq: end, sts\_map: procrustes, lambda\_rs: 0, gamma: 0}. Kết quả tổ hợp tính
+bằng \texttt{exps/agm/final\_eval.py} trên dump của từng task.
+
+% =====================================================================================================================
+\section{Bản B -- V3-specgrid: thống kê lớp có độ bất định}\label{sec:v3}
+
+\subsection{Động cơ}
+V2 có hai điểm yếu về thống kê:
+\begin{enumerate}
+\item \textbf{Covariance lớp mới suy biến.} Với $n_c\approx30$ ảnh trong $768$ chiều, $\hat\bSigma_c$ chỉ có $\approx29$
+      hướng khác $0$; ridge $10^{-3}I$ là một sửa tạm. Mẫu Gauss dùng cho CA vì vậy chỉ trải trên một không gian con nhỏ.
+\item \textbf{Bù drift không có sai số.} STS cho một ước lượng điểm của $\bmu_c$ sau drift, nhưng ước lượng này có sai
+      số và sai số tích luỹ qua các task. V2 coi thống kê lớp cũ là chính xác.
+\end{enumerate}
+V3 tách covariance của mỗi lớp thành hai phần có vai trò khác nhau:
+\begin{equation}
+\bSigma^{\text{pred}}_c=\underbrace{\Big(1+\tfrac1{n_c}\Big)S_c}_{\text{độ phân tán của lớp}}+\underbrace{U_c}_{\text{sai số của ước lượng}},
+\end{equation}
+trong đó $S_c$ là \emph{hình dạng} của lớp (phân tán của đặc trưng quanh mean), $U_c$ là \emph{độ bất định} của mean
+đã lưu. Hệ số $1+1/n_c$ là phần bất định của mean ước lượng từ $n_c$ mẫu. Đây là dạng phân bố dự đoán của mô hình Gauss
+có tham số ước lượng \cite{murphy}.
+
+\subsection{Vay hình dạng từ các lớp lân cận}\label{sec:v3-borrow}
+Các lớp gần nhau trong không gian đặc trưng thường có hình dạng phân tán tương tự. V3 dùng tiên nghiệm cho $S_c$ là
+trung bình có trọng số các covariance nguồn (mọi lớp cũ và các lớp mới khác của cùng task, trừ chính $c$):
+\begin{equation}
+P_c=\sum_{j\ne c}w_{cj}\,S_j,\qquad w_{cj}=\frac{\exp\big(\tau\cos(\bmu_c,\bmu_j)\big)}{\sum_{j'\ne c}\exp\big(\tau\cos(\bmu_c,\bmu_{j'})\big)}.
+\end{equation}
+Ước lượng hậu nghiệm co $\hat\bSigma_c$ về $P_c$ với độ mạnh $n_0$ ``ảnh giả'' (dạng liên hợp Wishart nghịch đảo
+\cite{murphy}):
+\begin{equation}
+S_c=\frac{n_0\,P_c+(n_c-1)\,\hat\bSigma_c}{n_0+n_c-1}+10^{-3}I.
+\end{equation}
+Với $n_0=0$, $S_c$ trùng với covariance của V2. $\tau$ điều khiển mức tập trung vào các lớp gần nhất ($\tau=0$: trung
+bình đều).
+
+\paragraph{Chọn $(n_0,\tau)$ bằng dữ liệu train.} Mỗi task, ảnh của lớp mới (lớp có ít nhất $4$ ảnh) được chia đôi ngẫu
+nhiên. Với mỗi cặp $(n_0,\tau)$ trên lưới, ước lượng $(\bmu_c,S_c)$ từ một nửa và tính log-likelihood Gauss của nửa kia,
+rồi đổi vai (2-fold). Chọn cặp có log-likelihood trung bình mỗi ảnh lớn nhất. Không dùng tập test. Lưới
+\textbf{specgrid}:
+\[
+n_0\in\{0,5,10,20,50,100\},\qquad \tau\in\{4,8,16,32\}.
+\]
+\textbf{Kết quả chọn:} $n_0=100$, $\tau=4$ ở cả 10 task. Log-likelihood giữ lại tăng rất mạnh so với $n_0=0$ (ví dụ task
+1: $-2469.5$ so với $-776717$ mỗi ảnh): covariance của V2 gần như suy biến nên gán mật độ cực thấp cho ảnh ngoài mẫu.
+Lưu ý $n_0=100$ nằm ở biên lưới (xem mục~\ref{sec:limits}).
+
+\subsection{Độ bất định tích luỹ $U_c$}\label{sec:v3-u}
+Lớp mới có $U_c=0$. Mỗi lần STS vận chuyển lớp $c$ bằng ánh xạ $A_c$, hình dạng và độ bất định cập nhật theo bước dự
+đoán của bộ lọc Kalman:
+\begin{equation}
+S_c\leftarrow A_c^\top S_cA_c,\qquad U_c\leftarrow A_c^\top U_cA_c+Q_c.
+\end{equation}
+$Q_c$ là sai số của chính ánh xạ drift, đo \emph{ngoài mẫu} bằng cross-fitting: chia tập dò thành hai fold, khớp ánh xạ
+trên fold này và đo phần dư $\vf_t(x)-\mathrm{pred}(x)$ trên fold kia. Từ phần dư có trọng số $r_{ic}$:
+\begin{equation}
+R_c=\text{covariance phần dư ngoài mẫu},\qquad Q_c=R_c\Big(1+\tfrac1{n_{\text{eff}}}\Big),
+\end{equation}
+với $n_{\text{eff}}$ là số ảnh hiệu dụng. Lớp không có ánh xạ riêng dùng phần dư toàn cục $R_g$ với $n_{\text{eff}}$ là
+số ảnh thật. Để ổn định trong $768$ chiều, $Q$ được xấp xỉ bằng PPCA: giữ $16$ hướng chính cộng một phần đẳng hướng,
+bảo toàn vết.
+
+\subsection{Dùng $\bSigma^{\text{pred}}$ ở đâu}\label{sec:v3-pred}
+Trong V3-specgrid, $\bSigma^{\text{pred}}_c=(1+1/n_c)S_c+U_c$ thay cho $\bSigma_c$ ở \emph{mọi} chỗ dùng covariance:
+\begin{itemize}
+\item bước E của STS (mục~\ref{sec:sts}): lớp cũ có bất định lớn có mật độ trải rộng hơn;
+\item sinh mẫu Gauss cho CA: lớp cũ có $U_c$ lớn được biểu diễn bằng đám mẫu rộng hơn, head buộc phải chừa lề cho sai số
+      của mean;
+\item LDA và AGM (khi dùng tổ hợp).
+\end{itemize}
+Mean, ánh xạ drift và backbone giống hệt V2. Đã kiểm chứng bằng \texttt{exps/v3/check\_backbone.py}: đặc trưng test của
+V3-specgrid và V2 trùng nhau từng bit ở cả 10 task.
+
+\subsection{Cấu hình}
+\texttt{exps/v3/imageneta\_v3specgrid\_s1993.json}: như V2 cộng \texttt{v3: true}, \texttt{v3\_n0\_grid},
+\texttt{v3\_tau\_grid}, \texttt{v3\_select: loglik}, \texttt{v3\_estep: pred}, \texttt{v3\_head\_cov: pred}. Ba khoá cuối
+là hành vi của mã lúc chạy V3-specgrid; mã hiện tại có mặc định khác (của V3.1), nên đã ghi rõ chúng vào cấu hình để
+chạy lại cho đúng.
+
+% =====================================================================================================================
+\section{Thiết lập thực nghiệm}\label{sec:exp}
+
+\textbf{ImageNet-A}: 200 lớp, 10 task $\times$ 20 lớp, $\approx30$ ảnh train/lớp, thứ tự lớp xáo theo seed.
+\textbf{VTAB}: 50 lớp, 5 task (mỗi task một miền). \textbf{CUB-200}: 200 lớp, 20 task $\times$ 10 lớp. Siêu tham số
+giống RSIAT gốc (ImageNet-A: 20/15 epoch, CA 10 epoch, batch 48, $s=30$, $m=0.3$, RAE $\beta=3$, \texttt{code\_dims}
+128). STS: $\eta=0.3$, $\pi_0=0.5$, ngưỡng $N_c=5$, $n_0^{STS}=50$, Procrustes.
+
+\paragraph{Độ tin cậy.} Huấn luyện tất định. Tập test ImageNet-A nhỏ: một ảnh bằng $0.06$--$0.3$ điểm, nên chênh lệch
+dưới $\approx0.3$ trên một seed nằm trong mức nhiễu. RSIAT gốc trên CUB là số do tác giả cung cấp. Số CA trong bảng so
+sánh không tổ hợp lấy từ log huấn luyện; số tổ hợp tính offline trên dump (CA tính lại từ dump có thể lệch log
+$\le0.1$ điểm, ví dụ CA của V2: $75.03/66.29$ trong log, $75.02/66.23$ trên dump).
+
+% =====================================================================================================================
+\section{Kết quả bản A (V2, có tổ hợp)}\label{sec:res-v2}
+
+\subsection{ImageNet-A}
+
+\begin{table}[H]
+\centering\small
+\caption{ImageNet-A, seed 1993, có tổ hợp. RSIAT gốc: CA; các bản còn lại: z(CA)+z(LDA)+z(AGM). In đậm: cao nhất mỗi cột.}
+\label{tab:ens1993}
+\setlength{\tabcolsep}{3.6pt}
+\begin{tabular}{l*{10}{c}cc}
+\toprule
+Task & 0 & 1 & 2 & 3 & 4 & 5 & 6 & 7 & 8 & 9 & Avg & Last \\
+\midrule
+RSIAT gốc & 86.29 & 82.50 & 79.62 & \textbf{78.65} & 75.51 & 73.23 & 70.56 & 68.59 & 66.88 & 65.77 & 74.76 & 65.77 \\
+V1 & 87.43 & 84.72 & \textbf{81.09} & 79.08 & 75.03 & 74.36 & 71.01 & 68.51 & 66.81 & 65.90 & 75.39 & 65.90 \\
+\textbf{V2} & 87.43 & 84.44 & 80.88 & 78.51 & \textbf{75.62} & \textbf{74.87} & \textbf{71.63} & \textbf{68.99} & \textbf{67.24} & \textbf{66.69} & \textbf{75.63} & \textbf{66.69} \\
+V3-specgrid & \textbf{88.57} & \textbf{85.56} & 80.25 & \textbf{79.08} & 75.39 & 74.15 & 71.10 & 68.91 & 66.67 & 65.77 & 75.54 & 65.77 \\
+\bottomrule
+\end{tabular}
+\end{table}
+(Task 3: V1 và V3-specgrid cùng $79.08$, cao nhất.)
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}
+\begin{axis}[width=0.92\linewidth, height=6.2cm, xlabel={Task}, ylabel={Độ chính xác (\%)},
+  xtick={0,...,9}, ymin=64, ymax=89.5, grid=major, grid style={black!12},
+  legend style={at={(0.02,0.03)}, anchor=south west, font=\small, fill=white, fill opacity=0.9}]
+\addplot[cOrig, thick, mark=o] coordinates {(0,86.29)(1,82.50)(2,79.62)(3,78.65)(4,75.51)(5,73.23)(6,70.56)(7,68.59)(8,66.88)(9,65.77)};
+\addlegendentry{RSIAT gốc (CA)}
+\addplot[cV1, thick, mark=square] coordinates {(0,87.43)(1,84.72)(2,81.09)(3,79.08)(4,75.03)(5,74.36)(6,71.01)(7,68.51)(8,66.81)(9,65.90)};
+\addlegendentry{V1 (tổ hợp)}
+\addplot[cV3, thick, dashed, mark=triangle] coordinates {(0,88.57)(1,85.56)(2,80.25)(3,79.08)(4,75.39)(5,74.15)(6,71.10)(7,68.91)(8,66.67)(9,65.77)};
+\addlegendentry{V3-specgrid (tổ hợp)}
+\addplot[cV2, very thick, mark=*] coordinates {(0,87.43)(1,84.44)(2,80.88)(3,78.51)(4,75.62)(5,74.87)(6,71.63)(7,68.99)(8,67.24)(9,66.69)};
+\addlegendentry{V2 (tổ hợp)}
+\end{axis}
+\end{tikzpicture}
+\caption{ImageNet-A seed 1993, có tổ hợp. V3-specgrid dẫn ở các task đầu (thống kê lớp mới tốt hơn) nhưng tụt dưới V2 từ
+task 4 (độ bất định tích luỹ của lớp cũ bị ước lượng quá lớn, mục~\ref{sec:why}). V2 cao nhất từ task 4 tới cuối.}
+\label{fig:ens}
+\end{figure}
+
+\begin{table}[H]
+\centering\small
+\caption{ImageNet-A seed 1993: từng bộ phân loại (Avg / Last, tính trên dump).}
+\label{tab:heads}
+\begin{tabular}{lccccc}
+\toprule
+ & CA & LDA & AGM & z(CA+AGM) & z(CA+LDA+AGM) \\
+\midrule
+V1 & 74.76 / 65.64 & 74.33 / 64.98 & 74.19 / 64.65 & 75.25 / 65.90 & 75.39 / 65.90 \\
+V2 & 75.02 / \textbf{66.23} & 74.42 / \textbf{65.64} & \textbf{74.55 / 65.50} & \textbf{75.50 / 66.29} & \textbf{75.63 / 66.69} \\
+V3-specgrid & \textbf{75.13} / 65.96 & \textbf{74.64} / 65.17 & 73.95 / 64.52 & 75.42 / 65.57 & 75.54 / 65.77 \\
+\bottomrule
+\end{tabular}
+\end{table}
+Tổ hợp luôn cao hơn bộ phân loại đơn tốt nhất ($+0.5$ Avg với V2). Ở V3-specgrid, AGM yếu đi rõ ($-0.6/-1.0$ so với V2),
+kéo tổ hợp xuống.
+
+\begin{table}[H]
+\centering\small
+\caption{ImageNet-A, 3 seed, có tổ hợp (Avg / Last). V2 thắng RSIAT gốc ở cả 3 seed.}
+\label{tab:ina3}
+\begin{tabular}{lcccc}
+\toprule
+Seed & RSIAT gốc & V1 & V2 & V2 $-$ gốc \\
+\midrule
+1993 & 74.76 / 65.77 & 75.39 / 65.90 & \textbf{75.63 / 66.69} & $+0.87$ / $+0.92$ \\
+1994 & 72.18 / 63.99 & 72.98 / 64.98 & \textbf{73.06 / 65.04} & $+0.88$ / $+1.05$ \\
+1995 & 71.10 / 65.31 & \textbf{72.19} / 65.70 & 72.18 / \textbf{66.10} & $+1.08$ / $+0.79$ \\
+\midrule
+\textbf{Trung bình} & 72.68 / 65.02 & 73.52 / 65.53 & \textbf{73.62 / 65.94} & $\mathbf{+0.94}$ / $\mathbf{+0.92}$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}
+\begin{axis}[ybar, bar width=12pt, width=0.8\linewidth, height=5.6cm, ymin=64, ymax=74.5,
+  symbolic x coords={Avg,Last}, xtick=data, enlarge x limits=0.5, ylabel={Độ chính xác (\%)},
+  nodes near coords, nodes near coords style={font=\scriptsize, rotate=90, anchor=west},
+  legend style={at={(0.5,1.03)}, anchor=south, legend columns=3, font=\small}]
+\addplot[fill=cOrig!70] coordinates {(Avg,72.68)(Last,65.02)};
+\addplot[fill=cV1!70] coordinates {(Avg,73.52)(Last,65.53)};
+\addplot[fill=cV2!80] coordinates {(Avg,73.62)(Last,65.94)};
+\legend{RSIAT gốc, V1, V2}
+\end{axis}
+\end{tikzpicture}
+\caption{ImageNet-A, trung bình 3 seed (có tổ hợp).}
+\end{figure}
+
+\subsection{VTAB}
+\begin{table}[H]
+\centering\small
+\caption{VTAB (một lần chạy tất định; seed không ảnh hưởng vì thứ tự miền cố định). RSIAT gốc: CA; V1, V2: tổ hợp.}
+\begin{tabular}{l*{5}{c}cc}
+\toprule
+Task & 0 & 1 & 2 & 3 & 4 & Avg & Last \\
+\midrule
+RSIAT gốc & 96.70 & 93.93 & 94.00 & \textbf{94.27} & 94.69 & 94.72 & 94.69 \\
+V1 & \textbf{97.10} & 94.29 & 94.17 & 94.14 & 94.86 & 94.91 & 94.86 \\
+\textbf{V2} & \textbf{97.10} & \textbf{94.36} & \textbf{94.34} & 94.25 & \textbf{94.91} & \textbf{94.99} & \textbf{94.91} \\
+\bottomrule
+\end{tabular}
+\end{table}
+Từng bộ phân loại của V2 trên VTAB (Avg / Last): CA $94.80/94.73$, LDA $93.99/93.94$, AGM $94.34/94.42$, tổ hợp
+$94.99/94.91$.
+
+\subsection{CUB-200}
+\begin{table}[H]
+\centering\small
+\caption{CUB, seed 1993 (Avg / Last). RSIAT gốc do tác giả cung cấp.}
+\label{tab:cub}
+\begin{tabular}{lccccc}
+\toprule
+ & CA & LDA & AGM & z(CA+AGM) & z(CA+LDA+AGM) \\
+\midrule
+RSIAT gốc & 93.93 / 90.37 & -- & -- & -- & -- \\
+V1 & 93.99 / 90.46 & 93.16 / 88.72 & 93.40 / 89.06 & 93.63 / 89.40 & 93.66 / 89.57 \\
+V2 & \textbf{94.16 / 90.54} & 93.38 / 89.10 & 93.50 / 89.65 & 93.67 / 89.99 & 93.69 / 90.08 \\
+\bottomrule
+\end{tabular}
+\end{table}
+Trên CUB (phân loại chim rất mịn), LDA và AGM yếu hơn CA $1$--$1.5$ điểm ở task cuối, nên tổ hợp trọng số bằng nhau thấp
+hơn CA. Trên CUB, \textbf{bản tốt nhất là CA của V2} ($94.16/90.54$, vượt RSIAT gốc $+0.23/+0.17$); tổ hợp không vượt
+RSIAT gốc ở task cuối.
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}
+\begin{axis}[width=0.92\linewidth, height=6cm, xlabel={Task}, ylabel={Độ chính xác (\%)},
+  xtick={0,2,...,19}, ymin=89.3, ymax=100.3, grid=major, grid style={black!12},
+  legend style={at={(0.98,0.97)}, anchor=north east, font=\small}]
+\addplot[cOrig, thick, mark=o, mark size=1.5pt] coordinates {(0,100.00)(1,98.79)(2,98.55)(3,98.02)(4,97.50)(5,95.24)(6,93.70)(7,94.23)(8,93.82)(9,93.27)(10,93.40)(11,92.58)(12,91.79)(13,91.65)(14,91.23)(15,91.43)(16,91.21)(17,91.02)(18,90.80)(19,90.37)};
+\addlegendentry{RSIAT gốc (CA)}
+\addplot[cV2, very thick, mark=*, mark size=1.5pt] coordinates {(0,100.00)(1,98.79)(2,98.55)(3,98.02)(4,97.68)(5,95.39)(6,94.09)(7,94.34)(8,94.20)(9,93.60)(10,93.40)(11,92.94)(12,92.19)(13,92.20)(14,91.68)(15,91.80)(16,91.36)(17,91.35)(18,91.02)(19,90.54)};
+\addlegendentry{V2 (CA)}
+\addplot[cV2, thick, dashed, mark=x, mark size=2pt] coordinates {(0,99.15)(1,98.38)(2,98.26)(3,97.80)(4,97.68)(5,95.39)(6,93.83)(7,94.12)(8,93.92)(9,93.27)(10,93.25)(11,92.37)(12,91.33)(13,91.29)(14,90.95)(15,90.96)(16,90.77)(17,90.70)(18,90.35)(19,90.08)};
+\addlegendentry{V2 (tổ hợp)}
+\end{axis}
+\end{tikzpicture}
+\caption{CUB, seed 1993. CA của V2 bằng hoặc cao hơn RSIAT gốc ở cả 20 task; tổ hợp (nét đứt) thấp hơn CA.}
+\end{figure}
+
+% =====================================================================================================================
+\section{Kết quả bản B (V3-specgrid, không tổ hợp)}\label{sec:res-v3}
+
+\begin{table}[H]
+\centering\small
+\caption{ImageNet-A, seed 1993, chỉ bộ phân loại CA (số lấy từ log huấn luyện). In đậm: cao nhất mỗi cột.}
+\label{tab:ca1993}
+\setlength{\tabcolsep}{3.6pt}
+\begin{tabular}{l*{10}{c}cc}
+\toprule
+Task & 0 & 1 & 2 & 3 & 4 & 5 & 6 & 7 & 8 & 9 & Avg & Last \\
+\midrule
+RSIAT gốc & \textbf{86.29} & 82.50 & 79.62 & \textbf{78.65} & 75.51 & 73.23 & 70.56 & 68.59 & 66.88 & 65.77 & 74.76 & 65.77 \\
+V1 & \textbf{86.29} & 82.22 & 79.62 & 78.37 & 75.15 & 73.74 & 70.65 & 68.91 & 67.03 & 65.70 & 74.77 & 65.70 \\
+V2 & \textbf{86.29} & 82.22 & 79.62 & 78.51 & \textbf{75.62} & \textbf{74.05} & \textbf{71.19} & \textbf{69.07} & \textbf{67.46} & \textbf{66.29} & 75.03 & \textbf{66.29} \\
+\textbf{V3-specgrid} & \textbf{86.29} & \textbf{84.17} & \textbf{80.46} & 78.37 & \textbf{75.62} & 73.64 & 70.74 & 68.83 & 67.17 & 65.96 & \textbf{75.13} & 65.96 \\
+\midrule
+V3 $-$ V2 & 0.00 & $+1.95$ & $+0.84$ & $-0.14$ & 0.00 & $-0.41$ & $-0.45$ & $-0.24$ & $-0.29$ & $-0.33$ & $+0.10$ & $-0.33$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}
+\begin{axis}[width=0.92\linewidth, height=5.6cm, xlabel={Task}, ylabel={V3-specgrid $-$ V2 (CA, điểm \%)},
+  xtick={0,...,9}, ymin=-0.8, ymax=2.2, grid=major, grid style={black!12}, ybar, bar width=12pt]
+\addplot[fill=cV3!70, draw=cV3!60!black] coordinates {(0,0)(1,1.95)(2,0.84)(3,-0.14)(4,0)(5,-0.41)(6,-0.45)(7,-0.24)(8,-0.29)(9,-0.33)};
+\end{axis}
+\end{tikzpicture}
+\caption{Chênh lệch CA giữa V3-specgrid và V2 theo task. Lợi ích tập trung ở task 1--2; từ task 5, V3 thua đều
+$0.2$--$0.5$ điểm.}
+\label{fig:cadiff}
+\end{figure}
+
+\paragraph{Lựa chọn của tiêu chí.} Ở cả 10 task, tiêu chí 2-fold chọn $n_0=100$, $\tau=4$. Ở task 0, CA không phụ thuộc
+covariance (head học trực tiếp trên ảnh thật), nên ba bản V1, V2, V3 bằng nhau ($86.29$).
+
+\subsection{Vì sao V3-specgrid tăng ở đầu và giảm ở cuối}\label{sec:why}
+\begin{itemize}
+\item \textbf{Task 1--2 tăng ($+1.95$, $+0.84$).} Lúc này phần lớn lớp còn ``trẻ'', $U_c$ còn nhỏ, và lợi ích chính là
+      covariance vay ($n_0=100$) không còn suy biến. Mẫu Gauss cho CA trải đúng hơn theo hình dạng thật của lớp, nên head
+      phân tách lớp mới và lớp cũ tốt hơn.
+\item \textbf{Từ task 5 giảm.} $U_c$ tích luỹ theo số lần vận chuyển. Chẩn đoán trên dump cho thấy $\tr U_c$ lớn gấp
+      $4$--$7$ lần sai số bình phương thật của mean lớp cũ (đo được nhờ thống kê oracle), và sau khi làm trắng theo
+      $S_c$, $U_c$ của các lớp cũ nhất lớn gấp $13$--$16$ lần so với lớp mới. Độ bất định bị ước lượng quá lớn làm đám
+      mẫu của lớp cũ quá rộng; head CA chừa lề quá nhiều, độ chính xác lớp cũ giảm. Trong bước E, lớp cũ cũng nhận ít
+      khối lượng hơn.
+\item Hai hiệu ứng gần như triệt tiêu nhau: $+0.10$ ở Avg, $-0.33$ ở Last.
+\end{itemize}
+
+\subsection{Các biến thể V3 đã thử sau specgrid (ImageNet-A seed 1993)}
+\begin{table}[H]
+\centering\small
+\caption{Các biến thể V3 (Avg / Last). Không biến thể nào vượt V2 ở tổ hợp; CA của specgrid là cao nhất ở Avg.}
+\begin{tabular}{lcc}
+\toprule
+Biến thể & CA & Tổ hợp \\
+\midrule
+V2 (tham chiếu) & 75.02 / 66.23 & \textbf{75.63 / 66.69} \\
+V3, lưới rộng ($n_0$ tới 2000, $\tau$ từ 0) & -- & 75.48 / 65.64 \\
+\textbf{V3-specgrid} & \textbf{75.13} / 65.96 & 75.54 / 65.77 \\
+V3.1: chọn bằng log-loss có điều kiện, bước E và head dùng $S$ & 75.10 / 65.90 & 75.11 / 65.17 \\
+V3.2: thêm co RDA $\gamma$ & \multicolumn{2}{c}{dừng giữa chừng, không có kết quả} \\
+\bottomrule
+\end{tabular}
+\end{table}
+(Cột CA ở bảng này tính trên dump để so cùng điều kiện.) V3.1 chọn $n_0=0$ ở task 0 rồi $n_0=500$, $\tau=0$ ở task 1--9:
+tiêu chí log-loss có điều kiện bị chi phối bởi vài lớp và đẩy lựa chọn ra biên. V3.2 bị dừng theo yêu cầu.
+
+% =====================================================================================================================
+\section{Thảo luận}\label{sec:discussion}
+
+\paragraph{Nên dùng bản nào.}
+\begin{itemize}
+\item \textbf{Có tổ hợp: V2.} Cao nhất trên ImageNet-A (1 seed và 3 seed) và VTAB; ổn định qua seed ($+0.94/+0.92$ trung
+      bình 3 seed so với RSIAT gốc).
+\item \textbf{Không tổ hợp:} trên ImageNet-A, V3-specgrid và V2 ngang nhau trong mức nhiễu (V3 hơn $0.10$ ở Avg, V2 hơn
+      $0.33$ ở Last). Nếu ưu tiên Last hoặc cần kết quả trên nhiều dataset, CA của V2 tốt hơn (trên CUB, CA của V2 là bản
+      tốt nhất). V3-specgrid chỉ nên gọi là ``tốt nhất không tổ hợp'' theo tiêu chí Avg trên ImageNet-A seed 1993.
+\end{itemize}
+
+\paragraph{Giới hạn.}\label{sec:limits}
+\begin{itemize}
+\item V3-specgrid mới có một lần chạy (ImageNet-A, seed 1993); chưa chạy VTAB, CUB và seed khác.
+\item $n_0=100$ được chọn ở biên của lưới specgrid; mở rộng lưới (V3, V3.1) chọn $n_0$ lớn hơn nhưng kết quả không tốt
+      hơn. Tiêu chí log-likelihood giữ lại không phản ánh đúng độ chính xác phân loại.
+\item Ước lượng $U_c$ quá lớn là nguyên nhân chính làm V3 giảm ở các task cuối. Cần hiệu chỉnh $Q_c$ (ví dụ đối chiếu với
+      sai số thật trên các lớp có đủ ảnh dò) trước khi V3 có thể vượt V2.
+\item Mức cải thiện so với RSIAT gốc nhỏ ($<1$ điểm). Trên CUB, tổ hợp trọng số bằng nhau làm giảm điểm.
+\end{itemize}
+
+\paragraph{Vị trí so với công trình liên quan.} STS kế thừa SDC \cite{sdc} (ước lượng drift từ ảnh mới), ADC \cite{adc}
+(mẫu đối kháng) và LDC \cite{ldc} (ánh xạ đặc trưng cũ--mới); điểm riêng là bước E có thành phần nền và vận chuyển cả
+covariance. V3 thêm hai ý: vay hình dạng covariance từ lớp lân cận (tương tự co Bayes) và theo dõi độ bất định của thống
+kê như bộ lọc Kalman. Cần so trực tiếp với ADC và LDC trên cùng backbone để khẳng định đóng góp.
+
+% =====================================================================================================================
+\section{Kết luận}
+\begin{itemize}
+\item \textbf{Bản tốt nhất có tổ hợp: V2} (RSIAT bỏ $\mathcal{L}_{RS}$, $\mathcal{L}_{orth}$; giữ RAE; STS cuối task;
+      z(CA)+z(LDA)+z(AGM)): ImageNet-A $75.63/66.69$ (seed 1993), $73.62/65.94$ (3 seed); VTAB $94.99/94.91$.
+\item \textbf{Bản tốt nhất không tổ hợp (theo Avg): V3-specgrid} (V2 + covariance vay hình dạng + độ bất định tích luỹ,
+      chỉ CA): ImageNet-A seed 1993 $75.13/65.96$, so với CA của V2 $75.03/66.29$ và RSIAT gốc $74.76/65.77$.
+\item Hai bản dùng chung backbone (đặc trưng giống hệt); mọi khác biệt đến từ thống kê lớp và cách phân loại.
+\end{itemize}
+
+% =====================================================================================================================
+\begin{thebibliography}{99}
+\bibitem{slca} G. Zhang, L. Wang, G. Kang, L. Chen, Y. Wei. SLCA: Slow Learner with Classifier Alignment for Continual
+Learning on a Pre-trained Model. \emph{ICCV}, 2023.
+\bibitem{ssiat} Y. Tan, Q. Zhou, X. Xiang, K. Wang, Y. Wu, Y. Li. Semantically-Shifted Incremental Adapter-Tuning is A
+Continual ViTransformer. \emph{CVPR}, 2024.
+\bibitem{sdc} L. Yu, B. Twardowski, X. Liu, L. Herranz, K. Wang, Y. Cheng, S. Jui, J. van de Weijer. Semantic Drift
+Compensation for Class-Incremental Learning. \emph{CVPR}, 2020.
+\bibitem{adc} D. Goswami, A. Soutif-Cormerais, Y. Liu, S. Kamath, B. Twardowski, J. van de Weijer. Resurrecting Old
+Classes with New Data for Exemplar-Free Continual Learning. \emph{CVPR}, 2024.
+\bibitem{ldc} A. Gomez-Villa, D. Goswami, K. Wang, A. D. Bagdanov, B. Twardowski, J. van de Weijer. Exemplar-free
+Continual Representation Learning via Learnable Drift Compensation. \emph{ECCV}, 2024.
+\bibitem{cosface} H. Wang, Y. Wang, Z. Zhou, X. Ji, D. Gong, J. Zhou, Z. Li, W. Liu. CosFace: Large Margin Cosine Loss
+for Deep Face Recognition. \emph{CVPR}, 2018.
+\bibitem{esl} T. Hastie, R. Tibshirani, J. Friedman. \emph{The Elements of Statistical Learning}, 2nd ed., Springer, 2009.
+\bibitem{rahimi} A. Rahimi, B. Recht. Random Features for Large-Scale Kernel Machines. \emph{NeurIPS}, 2007.
+\bibitem{procrustes} P. H. Schönemann. A Generalized Solution of the Orthogonal Procrustes Problem. \emph{Psychometrika},
+1966.
+\bibitem{murphy} K. P. Murphy. \emph{Machine Learning: A Probabilistic Perspective}. MIT Press, 2012.
+\end{thebibliography}
+
+\end{document}

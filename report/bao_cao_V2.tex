@@ -1,0 +1,695 @@
+\documentclass[11pt]{article}
+% Bien dich: pdflatex (hoac Overleaf). Moi hinh ve viet bang TikZ/pgfplots ngay trong file, khong can anh ngoai.
+\usepackage[T5]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage[vietnamese]{babel}
+\usepackage[a4paper,margin=2.3cm]{geometry}
+\usepackage{graphicx} % Required for inserting images
+\usepackage{amsmath,amssymb}
+\usepackage{booktabs}
+\usepackage{array}
+\usepackage{float}
+\usepackage{caption}
+\usepackage{xcolor}
+\usepackage{tikz}
+\usetikzlibrary{positioning,arrows.meta,shapes.geometric,fit,calc}
+\usepackage{pgfplots}
+\pgfplotsset{compat=1.17}
+\usepackage[hidelinks]{hyperref}
+
+\definecolor{cOrig}{HTML}{7F7F7F}
+\definecolor{cV1}{HTML}{1F77B4}
+\definecolor{cV2}{HTML}{D62728}
+\definecolor{cSS}{HTML}{FF7F0E}
+\definecolor{cBox}{HTML}{EAF2FB}
+\definecolor{cNew}{HTML}{FDECEA}
+
+\newcommand{\R}{\mathbb{R}}
+\newcommand{\bmu}{\boldsymbol{\mu}}
+\newcommand{\bSigma}{\boldsymbol{\Sigma}}
+\newcommand{\vf}{\mathbf{f}}
+\newcommand{\tr}{\operatorname{tr}}
+
+\title{Báo cáo dự án khoa học\\[4pt]
+\large Học tăng dần theo lớp không lưu mẫu cũ trên ViT tiền huấn luyện:\\
+từ RSIAT đến V1 (AGME) và V2 (AGME + STS)}
+\author{Thị Thanh Nga Hoàng}
+\date{November 2026}
+
+\begin{document}
+
+\maketitle
+
+\begin{abstract}
+Báo cáo trình bày pipeline hiện tại của dự án học tăng dần theo lớp (class-incremental learning, CIL) không lưu mẫu
+cũ, xây trên ViT-B/16 tiền huấn luyện với adapter. Xuất phát từ phương pháp nền RSIAT, chúng tôi phân tích sai số của
+bộ phân loại dựng từ thống kê lớp thành hai phần: phần do \emph{biểu diễn} và phần do \emph{ước lượng thống kê} của lớp
+cũ. Từ phân tích này, chúng tôi đề xuất hai phiên bản. \textbf{V1 (AGME)} đơn giản hoá RSIAT (bỏ $\mathcal{L}_{RS}$ và
+$\mathcal{L}_{orth}$) và thay bộ phân loại đơn bằng tổ hợp chuẩn hoá z-score của ba bộ phân loại có sai số khác nhau
+(CA, LDA và AGM -- một hồi quy ridge dạng đóng trên đặc trưng ngẫu nhiên, tính chính xác từ mô-men Gaussian).
+\textbf{V2} giữ nguyên V1 nhưng thay bù drift SDC bằng \textbf{STS} (Self-Tracking Statistics): ước lượng
+responsibility bằng bước E của mô hình trộn có thành phần nền, dò lớp thiếu dữ liệu bằng mẫu đối kháng, khớp ánh xạ
+drift (Procrustes, chọn độ co bằng split-half) và \emph{vận chuyển cả mean lẫn covariance} của lớp cũ. Trên
+ImageNet-A (3 seed), V2 đạt $73.62/65.94$ (trung bình/task cuối) so với $72.68/65.02$ của RSIAT gốc
+($+0.94/+0.92$); trên VTAB đạt $94.99/94.91$ so với $94.72/94.69$. Trên CUB, riêng bộ phân loại CA của V2 vượt RSIAT
+gốc ($94.16/90.54$ so với $93.93/90.37$), nhưng tổ hợp ba bộ phân loại làm giảm điểm -- chúng tôi phân tích nguyên
+nhân và giới hạn của phương pháp.
+\end{abstract}
+
+\tableofcontents
+\newpage
+
+% =====================================================================================================================
+\section{Giới thiệu}
+
+\paragraph{Bài toán.} Trong học tăng dần theo lớp, mô hình nhận lần lượt các \emph{task}; mỗi task mang một nhóm lớp
+mới chưa từng thấy. Sau mỗi task, mô hình phải phân loại được \emph{mọi} lớp đã học, không được biết ảnh thuộc task
+nào. Ràng buộc \emph{không lưu mẫu cũ} (exemplar-free) cấm giữ lại ảnh của các task trước -- một ràng buộc thực tế vì
+lý do bộ nhớ và quyền riêng tư. Khó khăn trung tâm là \textbf{quên thảm khốc}: khi học lớp mới, biểu diễn thay đổi
+(\emph{drift}) và kiến thức về lớp cũ bị phá vỡ.
+
+\paragraph{Vì sao dùng mô hình tiền huấn luyện.} Các nghiên cứu gần đây cho thấy bắt đầu từ ViT tiền huấn luyện
+(ImageNet-21k) và chỉ tinh chỉnh một phần nhỏ tham số (adapter, prompt) giúp giảm drift đáng kể
+\cite{slca,ssiat}. Khi đó, lớp cũ có thể được ``nhớ'' qua \emph{thống kê đặc trưng} -- mean và covariance của từng lớp
+-- thay vì qua ảnh; bộ phân loại được huấn luyện lại trên mẫu sinh từ các Gaussian này (classifier alignment, CA
+\cite{slca}).
+
+\paragraph{Câu hỏi của dự án.} Nếu lớp cũ chỉ còn tồn tại dưới dạng thống kê, thì độ chính xác cuối cùng bị giới hạn
+bởi (i) biểu diễn còn tách được các lớp tốt đến đâu, và (ii) thống kê đã lưu còn đúng với biểu diễn hiện tại đến đâu.
+Dự án đi từ phân tích này để cải tiến phương pháp nền \textbf{RSIAT}, qua hai phiên bản:
+\begin{itemize}
+  \item \textbf{V1 (AGME v1)}: đơn giản hoá RSIAT và thay bộ phân loại đơn bằng tổ hợp ba bộ phân loại dựng từ cùng
+        thống kê (mục~\ref{sec:v1}).
+  \item \textbf{V2}: V1 với cơ chế bù drift mới STS, ước lượng lại cả mean lẫn covariance của lớp cũ
+        (mục~\ref{sec:v2}).
+\end{itemize}
+
+\paragraph{Đóng góp của báo cáo.}
+(1) Mô tả đầy đủ pipeline, từ vấn đề, công thức tới lý do của từng thành phần.
+(2) Phân rã sai số làm cơ sở thiết kế, kèm bằng chứng thực nghiệm (thí nghiệm ``oracle'').
+(3) Kết quả đầy đủ đến hết V2 trên ImageNet-A, VTAB, CUB, cùng các thí nghiệm loại bỏ (ablation) và các hướng đã thử
+nhưng thất bại.
+
+% =====================================================================================================================
+\section{Thiết lập bài toán và ký hiệu}\label{sec:setup}
+
+Chuỗi task $\mathcal{T}_0,\dots,\mathcal{T}_{T-1}$; task $t$ có tập lớp $\mathcal{C}_t$ (không giao nhau) và dữ liệu
+$\mathcal{D}_t=\{(x_i,y_i)\}$, $y_i\in\mathcal{C}_t$. Ký hiệu $K_t=|\mathcal{C}_0\cup\dots\cup\mathcal{C}_{t-1}|$ là
+số lớp cũ khi bắt đầu task $t$. Bộ trích đặc trưng $f_\theta:\mathcal{X}\to\R^{d}$ ($d=768$) là ViT-B/16 tiền huấn
+luyện ImageNet-21k, đóng băng, với adapter có thể học ở mỗi khối (\texttt{ffn\_num}$=64$). Ký hiệu $f_{t}$ là bộ trích
+đặc trưng sau task $t$.
+
+Mỗi lớp $c$ đã học được nhớ bằng thống kê $(\bmu_c,\bSigma_c)$, tính trên ảnh huấn luyện (biến đổi kiểu test) qua mô
+hình tại thời điểm lớp được học:
+\begin{equation}
+  \bmu_c=\frac{1}{n_c}\sum_{i:y_i=c} f(x_i),\qquad
+  \bSigma_c=\frac{1}{n_c-1}\sum_{i:y_i=c}\big(f(x_i)-\bmu_c\big)\big(f(x_i)-\bmu_c\big)^{\!\top}+10^{-3}I .
+\end{equation}
+Khi biểu diễn thay đổi ở các task sau, $(\bmu_c,\bSigma_c)$ cần được \emph{bù drift} để khớp không gian đặc trưng mới.
+
+\paragraph{Thước đo.} Sau mỗi task $t$, đo độ chính xác $A_t$ trên tập test của mọi lớp đã học. Báo cáo
+\textbf{Avg} $=\frac1T\sum_t A_t$ (trung bình qua các task) và \textbf{Last} $=A_{T-1}$ (sau task cuối).
+
+% =====================================================================================================================
+\section{Phương pháp nền: RSIAT}\label{sec:rsiat}
+
+RSIAT thuộc họ phương pháp adapter-tuning kèm bù drift ngữ nghĩa (gần với SSIAT \cite{ssiat}). Mỗi task gồm bốn bước.
+
+\paragraph{(a) Huấn luyện adapter với CosFace.} Head cosine với trọng số $w_j$; với $\cos\theta_j=\langle
+\hat{\vf},\hat w_j\rangle$ (dấu mũ là chuẩn hoá $\ell_2$), hàm mất mát CosFace \cite{cosface} có lề $m$ và thang $s$:
+\begin{equation}
+  \mathcal{L}_{\text{CE}}=-\log\frac{e^{s(\cos\theta_y-m)}}{e^{s(\cos\theta_y-m)}+\sum_{j\neq y}e^{s\cos\theta_j}},
+\end{equation}
+chỉ tính trên các lớp của task hiện tại. Lề $m$ làm cụm lớp chặt hơn, giúp thống kê Gaussian về sau sát thực tế hơn.
+
+\paragraph{(b) Ràng buộc chống quên.}
+\begin{itemize}
+\item $\mathcal{L}_{RS}$ (chỉ task 0): trên đặc trưng chuẩn hoá $\hat{\vf}$, kéo các cặp cùng lớp về tích vô hướng $1$
+và đẩy các cặp khác lớp dưới lề $\rho$:
+$\mathcal{L}_{RS}=\overline{[1-\hat\vf_i^\top\hat\vf_j]_+}^{\,y_i=y_j}+\alpha\,\overline{[\hat\vf_i^\top\hat\vf_j-\rho]_+}^{\,y_i\neq y_j}$.
+\item \textbf{RAE} (residual autoencoder), từ task 1: đặc trưng mới phải gần đặc trưng cũ \emph{sau một phép biến
+đổi học được}:
+\begin{equation}
+  \mathcal{L}_{RAE}=\beta\,\big\|f_t(x)-g_\phi\big(f_{t-1}(x)\big)\big\|_2^2,\qquad
+  g_\phi(u)=u+\sigma\big(\mathrm{Dec}(\mathrm{Enc}(u))\big),
+\end{equation}
+với Enc: $768\to64\to$ \texttt{code\_dims}, Dec ngược lại, $\sigma$ là sigmoid. $g_\phi$ được học cùng adapter. So với
+chưng cất đặc trưng cứng ($g=\mathrm{id}$), RAE cho phép một độ lệch dương có cấu trúc, nên đặc trưng ``được neo''
+nhưng không bị đóng băng.
+\item $\mathcal{L}_{orth}$: phạt độ tương đồng cosine trung bình giữa prototype lớp cũ (qua $g_\phi$) và đặc trưng cũ
+(qua $g_\phi$), với trọng số $\gamma$.
+\end{itemize}
+Tổng mất mát tại task $t\ge1$: $\mathcal{L}=\mathcal{L}_{CE}+\mathcal{L}_{RAE}+\gamma\mathcal{L}_{orth}$; tại task 0:
+$\mathcal{L}_{CE}+\lambda_{RS}\mathcal{L}_{RS}$.
+
+\paragraph{(c) Bù drift SDC.} Semantic Drift Compensation \cite{sdc} ước lượng dịch chuyển của mean lớp cũ từ dịch
+chuyển của ảnh \emph{mới}: với $\Delta_i=f_t(x_i)-f_{t-1}(x_i)$ trên ảnh của task $t$,
+\begin{equation}
+  \bmu_c\leftarrow\bmu_c+\sum_i w_{ic}\Delta_i,\qquad
+  w_{ic}\propto\exp\!\Big(-\frac{\|f_{t-1}(x_i)-\bmu_c\|^2}{2\sigma^2}\Big),\ \ \sigma=4 .
+\end{equation}
+SDC \emph{không cập nhật covariance}: $\bSigma_c$ giữ nguyên như lúc lớp được học.
+
+\paragraph{(d) Classifier alignment (CA).} Sau khi có thống kê mọi lớp, đóng băng backbone và huấn luyện lại head
+cosine $10$ epoch trên mẫu giả: mỗi epoch, mỗi lớp $c$ sinh $256$ mẫu
+$z\sim\mathcal{N}\big((0.9+\delta_c)\bmu_c,\ \bSigma_c\big)$, với $\delta_c=0.1\,(\tau_c+1)/(t+1)$ và $\tau_c$ là task
+học lớp $c$. Hệ số $<1$ cho lớp cũ là một heuristic chống thiên lệch về lớp mới (với head cosine, co mean tương đương
+nới rộng phân phối theo hướng).
+
+% =====================================================================================================================
+\section{Cơ sở phân tích: sai số của bộ phân loại dựng từ thống kê}\label{sec:theory}
+
+Mọi bộ phân loại trong pipeline (CA, LDA, AGM ở dưới) đều được dựng từ thống kê lớp. Với một bộ phân loại
+``plug-in'' dựng từ phân phối ước lượng, sai số tách được thành hai phần \cite[Định lý~2.2]{devroye}:
+\begin{equation}
+  \underbrace{\mathrm{Err}}_{\text{sai số cuối}} \;=\;
+  \underbrace{\mathrm{Err}^{\star}(f_t)}_{\text{(I) do biểu diễn}} \;+\;
+  \underbrace{\big(\mathrm{Err}-\mathrm{Err}^{\star}(f_t)\big)}_{\text{(II) do ước lượng thống kê sai}},
+\end{equation}
+trong đó $\mathrm{Err}^\star(f_t)$ là sai số tốt nhất có thể với biểu diễn hiện tại, và phần (II) bị chặn bởi độ lệch
+giữa phân phối ước lượng và phân phối thật \cite{devroye}.
+
+\begin{itemize}
+\item \textbf{Phần (I)} chỉ phụ thuộc vào việc các lớp cũ còn tách khỏi nhau và khỏi lớp mới tốt đến đâu. Ràng buộc
+chống quên (RAE) kiểm soát phần này.
+\item \textbf{Phần (II)} phụ thuộc vào việc $(\bmu_c,\bSigma_c)$ còn đúng không sau drift. Bù drift (SDC, STS) và cách
+dùng thống kê (bộ phân loại, tổ hợp) kiểm soát phần này.
+\end{itemize}
+Thí nghiệm \emph{oracle} đo trực tiếp phần (II): thay thống kê lớp cũ bằng thống kê thật (tính lại từ ảnh train cũ qua
+mô hình hiện tại -- chỉ dùng để phân tích, không phải phương pháp). Khoảng cách oracle -- thực tế là phần (II) còn có
+thể lấy lại. Phân rã này dẫn dắt toàn bộ thiết kế: V1 tác động vào \emph{cách dùng} thống kê, V2 tác động vào
+\emph{độ đúng} của thống kê, còn RAE được giữ để không làm phần (I) xấu đi (mục~\ref{sec:history} cho thấy bỏ RAE làm
+phần (I) tăng mạnh).
+
+% =====================================================================================================================
+\section{V1 (AGME v1): đơn giản hoá và tổ hợp ba bộ phân loại}\label{sec:v1}
+
+\subsection{Đơn giản hoá backbone}
+V1 dùng \textbf{RSIAT-simple}: bỏ $\mathcal{L}_{RS}$ ($\lambda_{RS}=0$) và $\mathcal{L}_{orth}$ ($\gamma=0$), giữ
+nguyên CosFace, RAE (cùng $\beta$), SDC và CA. Lý do: hai thành phần này làm pipeline phức tạp và có thêm siêu tham số
+riêng cho từng dataset; khi bỏ đi, độ chính xác CA gần như không đổi (ImageNet-A seed 1993: CA $74.76/65.64$ so với
+$74.76/65.77$ của RSIAT gốc; CUB: $93.99/90.46$ so với $93.93/90.37$), nên phần cải thiện về sau đến từ các thành phần
+mới chứ không từ việc tune lại.
+
+\subsection{Ba bộ phân loại dùng chung thống kê}
+Cho đặc trưng test $\vf$ và thống kê $\{(\bmu_c,\bSigma_c)\}_{c=1}^{C}$:
+\begin{enumerate}
+\item \textbf{CA}: logit của head cosine sau bước CA (mục~\ref{sec:rsiat}d).
+\item \textbf{LDA} \cite{esl}: covariance chung có ridge,
+\begin{equation}
+ \bar\bSigma=\frac1C\sum_c\bSigma_c,\quad P=\big(\bar\bSigma+\overline{\mathrm{diag}}(\bar\bSigma)\,I\big)^{-1},\quad
+ \ell^{LDA}_c(\vf)=\vf^\top P\bmu_c-\tfrac12\bmu_c^\top P\bmu_c .
+\end{equation}
+Ridge bằng trung bình đường chéo là co mạnh -- phù hợp chế độ $d=768$ lớn so với số ảnh mỗi lớp ($\approx30$--$50$).
+\item \textbf{AGM} (analytic Gaussian-moment head): hồi quy ridge trên đặc trưng ngẫu nhiên
+\begin{equation}
+ \phi(\vf)=\big[\vf;\ \mathrm{ReLU}(W\vf);\ 10\big]\in\R^{M},\qquad W\in\R^{4000\times d},\ W_{ij}\sim\mathcal{N}(0,1/d)
+ \ \text{(cố định)},
+\end{equation}
+($M=4000+768+1$), nghiệm dạng đóng
+\begin{equation}
+ G=\sum_c \bar n\,\mathbb{E}_{c}[\phi\phi^\top],\quad q_c=\bar n\,\mathbb{E}_{c}[\phi],\quad
+ w_c=(G+\lambda I)^{-1}q_c,\quad \lambda=0.1\,\tr(G)/M,
+\end{equation}
+trong đó kỳ vọng lấy theo $\vf\sim\mathcal{N}(\bmu_c,\bSigma_c)$ và được tính \emph{chính xác, không lấy mẫu}: khối
+ReLU--ReLU dùng mô-men của phân phối chuẩn hai biến bị cắt (cầu phương Gauss--Legendre), khối tuyến tính--ReLU dùng
+bổ đề Stein; $\bar n$ là số ảnh trung bình mỗi lớp (trọng số cân bằng). Đây là phiên bản ``vô hạn mẫu'' của việc huấn
+luyện bộ phân loại trên mẫu Gaussian, với đặc trưng phi tuyến kiểu random features \cite{rahimi}.
+\end{enumerate}
+
+\subsection{Tổ hợp z-score}
+Ba bộ phân loại có thang logit khác nhau, nên mỗi vector logit được chuẩn hoá theo từng ảnh rồi cộng với trọng số bằng
+nhau:
+\begin{equation}
+ z(\ell)=\frac{\ell-\mathrm{mean}_c(\ell)}{\mathrm{std}_c(\ell)},\qquad
+ \hat y=\arg\max_c\ \big[z(\ell^{CA})+z(\ell^{LDA})+z(\ell^{AGM})\big]_c .
+\end{equation}
+\textbf{Lý do:} CA là bộ phân loại phân biệt (học từ mẫu), LDA là bộ sinh tuyến tính với covariance chung, AGM là bộ
+phi tuyến dùng covariance riêng từng lớp; sai số của chúng tương quan không hoàn toàn nên tổ hợp giảm phương sai (đặc
+biệt ở lớp cũ, nơi thống kê kém tin cậy). Không có trọng số nào được chọn trên tập test.
+
+% =====================================================================================================================
+\section{V2: STS -- thống kê tự bám drift}\label{sec:v2}
+
+\subsection{Động cơ}
+SDC có hai hạn chế: (i) trọng số $w_{ic}$ là kernel khoảng cách cố định, nên ảnh mới không liên quan (ở xa mọi lớp cũ)
+vẫn ``kéo'' mean lớp cũ; (ii) covariance không được cập nhật, trong khi CA, LDA, AGM đều dùng covariance. Thí nghiệm
+oracle trên ImageNet-A (mục~\ref{sec:oracle}) cho thấy phần (II) không nhỏ: thay thống kê lớp cũ bằng thống kê thật
+làm tổ hợp CA+LDA tăng từ $74.91/66.10$ lên $75.53/67.08$. STS (Self-Tracking Statistics) được thiết kế để thu hẹp
+khoảng cách này.
+
+V2 $=$ V1 với SDC được thay bằng STS (chạy \emph{một lần ở cuối mỗi task}). RAE và mọi thành phần khác giữ nguyên. Vì
+STS không tham gia hàm mất mát, quỹ đạo huấn luyện backbone của V1 và V2 là \emph{như nhau} (mọi tính toán của STS bảo
+toàn trạng thái RNG); khác biệt kết quả đến hoàn toàn từ thống kê.
+
+\begin{figure}[t]
+\centering
+\begin{tikzpicture}[
+  font=\small, node distance=6mm and 8mm,
+  box/.style={draw, rounded corners=2pt, fill=cBox, align=center, minimum height=9mm, inner sep=4pt},
+  nbox/.style={box, fill=cNew},
+  arr/.style={-{Stealth[length=2.2mm]}, thick}]
+\node[box] (data) {Ảnh train\\task $t$};
+\node[box, right=of data] (train) {Huấn luyện adapter\\$\mathcal{L}_{CE}+\beta\mathcal{L}_{RAE}$};
+\node[box, above=of train] (old) {Mô hình cũ $f_{t-1}$\\(đóng băng)};
+\node[nbox, right=of train] (sts) {\textbf{STS} (V2), dùng $f_{t-1}$ và $f_t$\\bước E + mẫu đối kháng\\ánh xạ drift\\vận chuyển $\bmu,\bSigma$};
+\node[box, above=of sts] (bank) {Kho thống kê\\$\{(\bmu_c,\bSigma_c)\}$};
+\node[box, right=of sts] (newst) {Thống kê lớp mới\\(qua $f_t$)};
+\node[box, below=10mm of sts] (ca) {CA: head cosine\\trên mẫu Gaussian};
+\node[nbox, left=of ca] (lda) {LDA};
+\node[nbox, right=of ca] (agm) {AGM};
+\node[nbox, below=of ca] (fuse) {$z(\ell^{CA})+z(\ell^{LDA})+z(\ell^{AGM})$ (V1, V2)};
+\draw[arr] (data) -- (train);
+\draw[arr] (old) -- (train);
+\draw[arr] (train) -- (sts);
+\draw[arr] (bank) -- (sts);
+\draw[arr] (sts) -- (newst);
+\draw[arr] (newst.north) |- (bank.east);
+\draw[arr] (bank.west) -| ($(lda.north)+(0,0)$);
+\draw[arr] (sts) -- (ca);
+\draw[arr] (newst.south) |- (agm.east);
+\draw[arr] (lda) |- (fuse.west);
+\draw[arr] (ca) -- (fuse);
+\draw[arr] (agm) |- (fuse.east);
+\end{tikzpicture}
+\caption{Pipeline cho một task $t\ge1$. Ô màu đỏ nhạt là phần thêm so với RSIAT: STS (V2) thay SDC; LDA, AGM và tổ hợp
+z-score (V1). Ô xanh giữ như RSIAT-simple.}
+\label{fig:pipeline}
+\end{figure}
+
+\subsection{Tập dò và bước E với thành phần nền}
+Tại đầu task $t$, đặt $F=\{f_{t-1}(x_i)\}$ là vị trí của ảnh train mới qua mô hình \emph{cũ}. Các lớp cũ được mô hình
+hoá bằng mô hình trộn Gaussian, cộng một \emph{thành phần nền} cho chính ảnh mới:
+\begin{equation}
+ p(\vf)=\sum_{c=1}^{K}\frac{1-\pi_0}{K}\,\mathcal{N}(\vf;\bmu_c,\bSigma_{pool})+\pi_0\,\mathcal{N}(\vf;\bmu_0,\bSigma_0),
+\end{equation}
+với $\bSigma_{pool}$ là trung bình $\bSigma_c$ cộng ridge như LDA, $(\bmu_0,\bSigma_0)$ khớp trên ảnh mới, $\pi_0=0.5$.
+Bước E \cite{em} cho \emph{responsibility} $r_{ic}=p(c\mid \vf_i)$ và khối lượng $N_c=\sum_i r_{ic}$.
+
+\textbf{Lý do:} khác SDC, ảnh mới không giống lớp cũ nào sẽ rơi vào thành phần nền và không làm lệch ước lượng; trọng
+số do chính mô hình thống kê quyết định thay vì một bán kính kernel cố định.
+
+\paragraph{Mẫu đối kháng (cho lớp thiếu dữ liệu).} Lớp có $N_c<5$ gần như không có ảnh mới nào ``đại diện''. Theo
+tinh thần ADC \cite{adc}, chọn $16$ ảnh mới gần $\bmu_c$ nhất và chạy $10$ bước dấu-gradient (bước $2/255$) qua mô hình
+cũ để giảm khoảng cách Mahalanobis tới $\bmu_c$; chỉ giữ mẫu mà bước E gán vào đúng lớp $c$. Các mẫu này chỉ dùng để
+\emph{đo} drift, không đưa vào hàm mất mát.
+
+\subsection{Ánh xạ drift}
+Cuối task, $F'=\{f_t(x_i)\}$ là vị trí của cùng tập dò qua mô hình \emph{mới}, $D=F'-F$.
+\begin{enumerate}
+\item \textbf{Bước E bám:} $r\leftarrow(1-\eta)\,r+\eta\,r^{new}$ với $\eta=0.3$.
+\item \textbf{Ánh xạ chung (Procrustes):} khớp $D_i\approx m_D+(\vf_i-\bar m)B_g$ với $I+B_g$ là phép quay
+\cite{procrustes} có co về $I$:
+\begin{equation}
+ I+B_g=\arg\max_{R^\top R=I}\tr\!\Big(R^\top\big(X_c^\top Y_c+\alpha\tfrac{\|X_c\|_F^2}{d}I\big)\Big),
+\end{equation}
+($X_c$, $Y_c$ là $F$ và $F'-\bar m_D$ đã trừ trung bình). $\alpha\in\{10^{-2},\dots,10^{2}\}$ chọn bằng
+\emph{split-half}: khớp trên một nửa ảnh của mỗi lớp mới, chọn $\alpha$ có sai số dự đoán nhỏ nhất trên nửa còn lại.
+\textbf{Lý do:} phép quay giữ hình dạng covariance, ít bậc tự do (tránh khớp quá) -- phù hợp drift nhỏ khi có RAE.
+\item \textbf{Dịch chuyển riêng từng lớp:} với lớp có $N_c\ge5$, ước lượng tịnh tiến cục bộ có trọng số $r_{ic}$:
+$d^{loc}_c=\bar D_c+(\bmu_c-\bar x_c)B_g$, rồi co về dự đoán chung bằng $n_0=50$ ``mẫu giả'':
+\begin{equation}
+ d_c=\frac{n_{\text{eff},c}\,d^{loc}_c+n_0\,d^{glob}_c}{n_{\text{eff},c}+n_0},\qquad
+ n_{\text{eff},c}=\frac{(\sum_i r_{ic})^2}{\sum_i r_{ic}^2}.
+\end{equation}
+Đây là ước lượng co kiểu Bayes phân cấp: lớp có nhiều bằng chứng dùng dự đoán riêng, lớp ít bằng chứng dựa vào ánh xạ
+chung.
+\end{enumerate}
+
+\subsection{Vận chuyển mean và covariance}
+\begin{equation}
+ \bmu_c\leftarrow\bmu_c+d_c,\qquad \bSigma_c\leftarrow(I+B_g)^\top\,\bSigma_c\,(I+B_g).
+\end{equation}
+\textbf{Lý do:} nếu $\vf'=\vf(I+B)+b$ thì $\mathrm{Cov}(\vf')=(I+B)^\top\mathrm{Cov}(\vf)(I+B)$ -- covariance được
+biến đổi nhất quán với mean, điều SDC không làm. Hình~\ref{fig:transport} minh hoạ.
+
+\begin{figure}[t]
+\centering
+\begin{tikzpicture}[font=\small]
+\draw[thick, cOrig, rotate around={20:(0,0)}] (0,0) ellipse (1.4 and 0.6);
+\fill[cOrig] (0,0) circle (1.5pt) node[below=2pt] {$\bmu_c$};
+\node[cOrig] at (0,1.2) {không gian $f_{t-1}$};
+\draw[thick, cV2, rotate around={55:(5,0.6)}] (5,0.6) ellipse (1.4 and 0.6);
+\fill[cV2] (5,0.6) circle (1.5pt) node[below right=1pt] {$\bmu_c+d_c$};
+\node[cV2] at (5,2.0) {không gian $f_{t}$ (STS)};
+\draw[dashed, thick, cV1, rotate around={20:(4.2,0.1)}] (4.2,0.1) ellipse (1.4 and 0.6);
+\node[cV1, align=center] at (3.3,-1.3) {SDC: chỉ dời mean,\\covariance giữ nguyên};
+\draw[-{Stealth[length=2.5mm]}, thick] (0.3,0.1) to[bend left=15] node[above] {$\vf\mapsto \vf(I+B_g)+b$} (4.7,0.6);
+\foreach \p in {(-0.6,-0.2),(0.5,0.3),(0.9,0.5),(-0.3,0.1),(0.2,-0.3)} \fill[black!50] \p circle (1pt);
+\foreach \p in {(4.7,0.0),(5.3,1.2),(5.6,1.3),(4.9,0.5),(5.1,0.1)} \fill[black!50] \p circle (1pt);
+\end{tikzpicture}
+\caption{STS vận chuyển cả mean và covariance qua cùng ánh xạ drift; SDC (nét đứt) chỉ dời mean. Chấm xám: ảnh mới
+được dùng làm tập dò.}
+\label{fig:transport}
+\end{figure}
+
+\subsection{Thuật toán và các lựa chọn thiết kế}
+\noindent\fbox{\begin{minipage}{0.96\linewidth}
+\textbf{Thuật toán V2 tại task $t\ge1$}
+\begin{enumerate}\itemsep0pt
+\item \emph{Đầu task:} tính $F$ qua $f_{t-1}$; bước E $\Rightarrow r, N_c$; sinh mẫu đối kháng cho lớp có $N_c<5$.
+\item \emph{Huấn luyện:} $\mathcal{L}_{CE}+\beta\mathcal{L}_{RAE}$ (như V1), STS không can thiệp.
+\item \emph{Cuối task:} tính $F'$ qua $f_t$; bước E bám; ánh xạ Procrustes ($\alpha$ split-half); dịch chuyển riêng
+      có co; vận chuyển $(\bmu_c,\bSigma_c)$ của mọi lớp cũ.
+\item \emph{Lớp mới:} $(\bmu_c,\bSigma_c)$ qua $f_t$.
+\item \emph{CA} trên mẫu Gaussian của mọi lớp; \emph{dự đoán} bằng $z(\ell^{CA})+z(\ell^{LDA})+z(\ell^{AGM})$.
+\end{enumerate}
+\end{minipage}}
+
+\medskip
+Các lựa chọn đã được kiểm chứng bằng thực nghiệm (mục~\ref{sec:history}):
+\begin{itemize}
+\item \textbf{Giữ RAE.} Bỏ RAE và để STS ``bám'' drift lớn (cùng một hàm phạt phần drift STS không giải thích được)
+chỉ hoà với V1; bỏ RAE hoàn toàn mất $2.5/3.6$ điểm. Theo phân rã ở mục~\ref{sec:theory}, RAE giữ phần (I), STS giảm
+phần (II): hai vai trò bổ sung, không thay thế nhau.
+\item \textbf{Bám một lần cuối task} thay vì sau mỗi epoch: cho cùng kết quả ($75.63/66.69$ so với $75.67/66.69$) mà
+nhanh hơn khoảng $3$ lần; STS khi đó là một mô-đun thay SDC, độc lập với vòng huấn luyện.
+\end{itemize}
+
+% =====================================================================================================================
+\section{Thiết lập thực nghiệm}\label{sec:exp}
+
+\paragraph{Dữ liệu và giao thức.}
+\textbf{ImageNet-A} (200 lớp, 10 task $\times$ 20 lớp, $\approx30$ ảnh train/lớp);
+\textbf{VTAB} (50 lớp, 5 task $\times$ 10 lớp, mỗi task một miền, $\approx36$ ảnh/lớp);
+\textbf{CUB-200} (200 lớp, 20 task $\times$ 10 lớp, $\approx47$ ảnh/lớp). Thứ tự lớp xáo theo seed (ImageNet-A, CUB);
+VTAB giữ thứ tự miền cố định. Backbone ViT-B/16 ImageNet-21k, adapter, SGD với lịch cosine.
+
+\begin{table}[H]
+\centering\small
+\caption{Siêu tham số theo dataset (giống RSIAT gốc; V1/V2 đặt $\lambda_{RS}=\gamma=0$). STS dùng chung:
+$\eta=0.3$, $\pi_0=0.5$, ngưỡng $N_c=5$, $n_0=50$, $16$ mẫu đối kháng/lớp, $10$ bước, ánh xạ Procrustes,
+$\alpha\in\{10^{-2},\dots,10^2\}$.}
+\begin{tabular}{lccc}
+\toprule
+ & ImageNet-A & VTAB & CUB \\
+\midrule
+Lớp/task, số task & 20, 10 & 10, 5 & 10, 20 \\
+Epoch task 0 / task sau / CA & 20 / 15 / 10 & 30 / 20 / 10 & 20 / 30 / 10 \\
+Batch, lr & 48, $6.7\!\times\!10^{-3}$ & 48, $3.6\!\times\!10^{-2}$ & 128, $3.8\!\times\!10^{-2}$ \\
+CosFace $s$ / $m$ & 30 / 0.3 & 20 / 0.3 & 20 / 0.1 \\
+RAE $\beta$ / \texttt{code\_dims} & 3.0 / 128 & 0.2 / 256 & 1.5 / 768 \\
+RSIAT gốc: $\lambda_{RS}$ / $\gamma$ & 1.0 / 6.0 & 2.0 / 1.0 & 0.2 / 0.75 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\paragraph{Ghi chú về độ tin cậy.}
+\begin{itemize}
+\item Huấn luyện là tất định (cùng cấu hình cho kết quả lặp lại chính xác). Trên ImageNet-A, tập test nhỏ: một ảnh
+tương đương $0.06$--$0.3$ điểm tuỳ task, nên chênh lệch dưới $\approx0.3$ trên một seed nằm trong mức nhiễu.
+\item \textbf{VTAB:} seed chỉ dùng để xáo thứ tự lớp, còn seed của torch cố định ($=1$); VTAB không xáo (thứ tự miền
+cố định), nên ``các seed'' của VTAB cho \emph{cùng một} lần chạy. Các con số ``3 seed'' của VTAB trước đây khác nhau
+chỉ vì mã lúc đó chưa hoàn toàn tất định. Vì vậy VTAB chỉ báo cáo một lần chạy.
+\item Số RSIAT gốc: ImageNet-A và VTAB là chạy lại trong cùng môi trường; CUB là số do tác giả cung cấp (log RSIAT gốc
+trong kho mã không khớp với cấu hình gốc). RSIAT gốc chỉ có bộ phân loại CA.
+\item Con số V1/V2 được tính offline trên dump (\texttt{exps/agm/final\_eval.py}); cột CA tính từ dump có thể lệch log
+huấn luyện $\le0.1$ điểm.
+\end{itemize}
+
+% =====================================================================================================================
+\section{Kết quả}\label{sec:results}
+
+\subsection{ImageNet-A}
+
+\begin{table}[H]
+\centering\small
+\caption{ImageNet-A, seed 1993: độ chính xác sau mỗi task. RSIAT gốc: CA; V1, V2: tổ hợp z(CA)+z(LDA)+z(AGM).
+In đậm: cao nhất mỗi cột.}
+\label{tab:ina1993}
+\setlength{\tabcolsep}{4pt}
+\begin{tabular}{l*{10}{c}cc}
+\toprule
+Task & 0 & 1 & 2 & 3 & 4 & 5 & 6 & 7 & 8 & 9 & Avg & Last \\
+\midrule
+RSIAT gốc & 86.29 & 82.50 & 79.62 & 78.65 & 75.51 & 73.23 & 70.56 & \textbf{68.59} & 66.88 & 65.77 & 74.76 & 65.77 \\
+RSIAT-super simple (bỏ RAE) & 87.43 & 83.33 & 78.57 & 76.07 & 74.08 & 71.28 & 66.64 & 65.06 & 63.94 & 62.34 & 72.88 & 62.34 \\
+V1 & \textbf{87.43} & \textbf{84.72} & \textbf{81.09} & \textbf{79.08} & 75.03 & 74.36 & 71.01 & 68.51 & 66.81 & 65.90 & 75.39 & 65.90 \\
+V2 & \textbf{87.43} & 84.44 & 80.88 & 78.51 & \textbf{75.62} & \textbf{74.87} & \textbf{71.63} & \textbf{68.99} & \textbf{67.24} & \textbf{66.69} & \textbf{75.63} & \textbf{66.69} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}
+\begin{axis}[width=0.92\linewidth, height=6.2cm, xlabel={Task}, ylabel={Độ chính xác (\%)},
+  xtick={0,...,9}, ymin=61, ymax=89, grid=major, grid style={black!12},
+  legend style={at={(0.02,0.03)}, anchor=south west, font=\small, fill=white, fill opacity=0.9}]
+\addplot[cOrig, thick, mark=o] coordinates {(0,86.29)(1,82.50)(2,79.62)(3,78.65)(4,75.51)(5,73.23)(6,70.56)(7,68.59)(8,66.88)(9,65.77)};
+\addlegendentry{RSIAT gốc (CA)}
+\addplot[cSS, thick, dashed, mark=triangle] coordinates {(0,87.43)(1,83.33)(2,78.57)(3,76.07)(4,74.08)(5,71.28)(6,66.64)(7,65.06)(8,63.94)(9,62.34)};
+\addlegendentry{Super simple (bỏ RAE)}
+\addplot[cV1, thick, mark=square] coordinates {(0,87.43)(1,84.72)(2,81.09)(3,79.08)(4,75.03)(5,74.36)(6,71.01)(7,68.51)(8,66.81)(9,65.90)};
+\addlegendentry{V1}
+\addplot[cV2, very thick, mark=*] coordinates {(0,87.43)(1,84.44)(2,80.88)(3,78.51)(4,75.62)(5,74.87)(6,71.63)(7,68.99)(8,67.24)(9,66.69)};
+\addlegendentry{V2}
+\end{axis}
+\end{tikzpicture}
+\caption{ImageNet-A, seed 1993. V2 bắt đầu vượt V1 từ task 4 (khi drift tích luỹ đủ lớn để việc vận chuyển covariance
+có tác dụng) và hơn RSIAT gốc $+0.92$ ở task cuối. Bỏ RAE (cam) làm mất $3.6$ điểm ở task cuối.}
+\label{fig:ina1993}
+\end{figure}
+
+\begin{table}[H]
+\centering\small
+\caption{ImageNet-A, 3 seed (Avg / Last). V2 thắng RSIAT gốc ở cả 3 seed.}
+\label{tab:ina3}
+\begin{tabular}{lcccc}
+\toprule
+Seed & RSIAT gốc & V1 & V2 & V2 $-$ gốc \\
+\midrule
+1993 & 74.76 / 65.77 & 75.39 / 65.90 & \textbf{75.63 / 66.69} & $+0.87$ / $+0.92$ \\
+1994 & 72.18 / 63.99 & 72.98 / 64.98 & \textbf{73.06 / 65.04} & $+0.88$ / $+1.05$ \\
+1995 & 71.10 / 65.31 & \textbf{72.19} / 65.70 & 72.18 / \textbf{66.10} & $+1.08$ / $+0.79$ \\
+\midrule
+\textbf{Trung bình} & 72.68 / 65.02 & 73.52 / 65.53 & \textbf{73.62 / 65.94} & $\mathbf{+0.94}$ / $\mathbf{+0.92}$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}
+\begin{axis}[ybar, bar width=12pt, width=0.8\linewidth, height=5.6cm, ymin=64, ymax=74.5,
+  symbolic x coords={Avg,Last}, xtick=data, enlarge x limits=0.5, ylabel={Độ chính xác (\%)},
+  nodes near coords, nodes near coords style={font=\scriptsize, rotate=90, anchor=west},
+  legend style={at={(0.5,1.03)}, anchor=south, legend columns=3, font=\small}]
+\addplot[fill=cOrig!70] coordinates {(Avg,72.68)(Last,65.02)};
+\addplot[fill=cV1!70] coordinates {(Avg,73.52)(Last,65.53)};
+\addplot[fill=cV2!80] coordinates {(Avg,73.62)(Last,65.94)};
+\legend{RSIAT gốc, V1, V2}
+\end{axis}
+\end{tikzpicture}
+\caption{ImageNet-A, trung bình 3 seed.}
+\end{figure}
+
+\begin{table}[H]
+\centering\small
+\caption{ImageNet-A, seed 1993: từng bộ phân loại (Avg / Last). Từ V1 sang V2, cả ba bộ phân loại đều tăng ở task
+cuối, nhiều nhất là LDA ($+0.66$) và AGM ($+0.85$) -- hai bộ dùng covariance mà SDC không cập nhật.}
+\label{tab:heads}
+\begin{tabular}{lccccc}
+\toprule
+ & CA & LDA & AGM & z(CA+AGM) & z(CA+LDA+AGM) \\
+\midrule
+V1 & 74.76 / 65.64 & 74.33 / 64.98 & 74.19 / 64.65 & 75.25 / 65.90 & 75.39 / 65.90 \\
+V2 & 75.02 / 66.23 & 74.42 / 65.64 & 74.55 / 65.50 & 75.50 / 66.29 & \textbf{75.63 / 66.69} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\paragraph{Nhận xét.} (i) Tổ hợp luôn tốt hơn bộ phân loại tốt nhất đơn lẻ ($+0.3$ ở V1, $+0.5$ ở V2 tại task cuối). (ii) Ở
+task 1--3, V2 nhỉnh thua V1 ($-0.2$ đến $-0.6$) dù CA bằng hoặc cao hơn; từ task 4 trở đi V2 thắng ở mọi task.
+(iii) Phần đóng góp của STS so với V1 là $+0.10/+0.41$ trung bình 3 seed: chủ yếu ở task cuối.
+
+\subsection{VTAB}
+
+\begin{table}[H]
+\centering\small
+\caption{VTAB (một lần chạy tất định). RSIAT gốc: CA; V1, V2: tổ hợp.}
+\begin{tabular}{l*{5}{c}cc}
+\toprule
+Task & 0 & 1 & 2 & 3 & 4 & Avg & Last \\
+\midrule
+RSIAT gốc & 96.70 & 93.93 & 94.00 & \textbf{94.27} & 94.69 & 94.72 & 94.69 \\
+V1 & \textbf{97.10} & 94.29 & 94.17 & 94.14 & 94.86 & 94.91 & 94.86 \\
+V2 & \textbf{97.10} & \textbf{94.36} & \textbf{94.34} & 94.25 & \textbf{94.91} & \textbf{94.99} & \textbf{94.91} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\begin{table}[H]
+\centering\small
+\caption{VTAB: từng bộ phân loại của V2 và hai biến thể tăng khả năng học miền mới (Avg / Last).}
+\begin{tabular}{lccccc}
+\toprule
+ & CA & LDA & AGM & z(CA+AGM) & z(CA+LDA+AGM) \\
+\midrule
+V2 & 94.80 / 94.73 & 93.99 / 93.94 & 94.34 / 94.42 & 94.97 / 94.89 & \textbf{94.99 / 94.91} \\
+V2, 30 epoch/task & 94.93 / 94.64 & 93.62 / 93.42 & 94.12 / 94.05 & 94.92 / 94.65 & 94.93 / 94.67 \\
+V2, $\beta=0$ (bỏ RAE) & 94.61 / 94.20 & 94.17 / 94.25 & 94.12 / 94.16 & 94.77 / 94.87 & 94.78 / 94.85 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\paragraph{Lỗi còn lại nằm ở đâu.} Ở task cuối của V2 (sai $\approx5.3\%$): nhầm giữa các miền $\approx0.7\%$, quên
+(độ chính xác lúc vừa học trừ lúc cuối) $\approx0.5\%$, \textbf{nhầm giữa các lớp trong cùng miền $\approx4.6\%$}; miền
+của task 1 chỉ đạt $86.75\%$ ngay khi vừa học. Như vậy trên VTAB, dư địa nằm ở chất lượng học từng miền (phần (I)),
+không ở thống kê lớp cũ; điều này giải thích vì sao STS chỉ thêm $+0.08/+0.05$ so với V1. Bỏ RAE làm CA giảm
+($94.20$ so với $94.73$ ở task cuối) -- RAE không cản việc học miền mới.
+
+\subsection{CUB-200}
+
+\begin{table}[H]
+\centering\small
+\caption{CUB, seed 1993 (Avg / Last). RSIAT gốc do tác giả cung cấp.}
+\label{tab:cub}
+\begin{tabular}{lccccc}
+\toprule
+ & CA & LDA & AGM & z(CA+AGM) & z(CA+LDA+AGM) \\
+\midrule
+RSIAT gốc & 93.93 / 90.37 & -- & -- & -- & -- \\
+V1 & 93.99 / 90.46 & 93.16 / 88.72 & 93.40 / 89.06 & 93.63 / 89.40 & 93.66 / 89.57 \\
+V2 & \textbf{94.16 / 90.54} & 93.38 / 89.10 & 93.50 / 89.65 & 93.67 / 89.99 & 93.69 / 90.08 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}
+\begin{axis}[width=0.92\linewidth, height=6cm, xlabel={Task}, ylabel={Độ chính xác (\%)},
+  xtick={0,2,...,19}, ymin=89.3, ymax=100.3, grid=major, grid style={black!12},
+  legend style={at={(0.98,0.97)}, anchor=north east, font=\small}]
+\addplot[cOrig, thick, mark=o, mark size=1.5pt] coordinates {(0,100.00)(1,98.79)(2,98.55)(3,98.02)(4,97.50)(5,95.24)(6,93.70)(7,94.23)(8,93.82)(9,93.27)(10,93.40)(11,92.58)(12,91.79)(13,91.65)(14,91.23)(15,91.43)(16,91.21)(17,91.02)(18,90.80)(19,90.37)};
+\addlegendentry{RSIAT gốc (CA)}
+\addplot[cV2, very thick, mark=*, mark size=1.5pt] coordinates {(0,100.00)(1,98.79)(2,98.55)(3,98.02)(4,97.68)(5,95.39)(6,94.09)(7,94.34)(8,94.20)(9,93.60)(10,93.40)(11,92.94)(12,92.19)(13,92.20)(14,91.68)(15,91.80)(16,91.36)(17,91.35)(18,91.02)(19,90.54)};
+\addlegendentry{V2 (chỉ CA)}
+\addplot[cV2, thick, dashed, mark=x, mark size=2pt] coordinates {(0,99.15)(1,98.38)(2,98.26)(3,97.80)(4,97.68)(5,95.39)(6,93.83)(7,94.12)(8,93.92)(9,93.27)(10,93.25)(11,92.37)(12,91.33)(13,91.29)(14,90.95)(15,90.96)(16,90.77)(17,90.70)(18,90.35)(19,90.08)};
+\addlegendentry{V2 (tổ hợp)}
+\addplot[cV1, thick, dashed, mark=square, mark size=1.3pt] coordinates {(0,99.15)(1,98.38)(2,98.26)(3,98.02)(4,98.04)(5,95.39)(6,93.83)(7,94.34)(8,94.11)(9,93.27)(10,93.09)(11,92.44)(12,91.14)(13,91.29)(14,90.89)(15,90.96)(16,90.57)(17,90.37)(18,90.13)(19,89.57)};
+\addlegendentry{V1 (tổ hợp)}
+\end{axis}
+\end{tikzpicture}
+\caption{CUB, seed 1993. CA của V2 bằng hoặc cao hơn RSIAT gốc ở cả 20 task; tổ hợp (nét đứt) thấp hơn CA.}
+\label{fig:cub}
+\end{figure}
+
+\paragraph{Phân tích.} (i) STS có ích: chỉ khác nhau ở bù drift, CA của V2 hơn CA của V1 $+0.17$ trung bình, đều ở
+mọi task (lớn nhất $+0.61$ ở task 13); LDA và AGM của V2 hơn V1 $+0.38/+0.59$ ở task cuối. (ii) Tổ hợp làm giảm điểm
+ở \emph{cả} V1 và V2: trên CUB (phân loại chim rất mịn), LDA và AGM yếu hơn CA rõ rệt ($1.4$--$1.7$ điểm ở task cuối
+của V1; ngay ở task 0, khi chưa có drift, LDA chỉ đạt $98.31$ so với $100$ của CA). Cộng đều ba bộ phân loại vì thế kéo
+về phía bộ yếu. Đây là giới hạn của quy tắc tổ hợp trọng số bằng nhau, không phải của STS.
+
+\subsection{Thí nghiệm oracle: phần (II) còn lại bao nhiêu}\label{sec:oracle}
+Trên ImageNet-A seed 1993 (V2), so ba loại thống kê lớp cũ trên \emph{cùng} backbone, với tổ hợp z(CA)+z(LDA):
+
+\begin{table}[H]
+\centering\small
+\begin{tabular}{lccc}
+\toprule
+Thống kê lớp cũ & CA & z(CA+LDA) & Sai số mean lớp cũ (chỉ số tương đối) \\
+\midrule
+Không bù (giữ nguyên lúc học) & 74.93 / 65.96 & 74.91 / 66.10 & 4.90 / 6.27 \\
+STS (V2) & 75.02 / 66.23 & 75.13 / 65.77 & 2.55 / 3.43 \\
+Oracle (thống kê thật) & 75.10 / 66.23 & 75.53 / 67.08 & 0 / 0 \\
+\bottomrule
+\end{tabular}
+\end{table}
+STS giảm sai số mean lớp cũ khoảng một nửa. Khoảng cách tới oracle ($\approx0.4$ trung bình, $\approx1.3$ ở task
+cuối với z(CA+LDA)) là dư địa còn lại của phần (II); phần lớn sai số còn lại thuộc phần (I).
+
+\subsection{Lịch sử phát triển và các hướng đã thử}\label{sec:history}
+
+\paragraph{Bỏ RAE.} RSIAT-super simple (RSIAT-simple bỏ RAE, không cơ chế giữ nào): $72.88/62.34$ so với $75.39/65.90$
+của V1, tức $-2.51/-3.56$. Với CA ở task cuối, độ chính xác lớp cũ giảm từ $65.45$ xuống $61.36$ trong khi lớp mới tăng từ
+$68.55$ lên $77.42$: bỏ ràng buộc thì học lớp mới dễ hơn nhưng quên lớp cũ nhanh, khoảng cách tăng dần theo task
+(Bảng~\ref{tab:ina1993}, Hình~\ref{fig:ina1993}).
+
+\paragraph{STS thay RAE (``bám thay vì neo'').} Ý tưởng: bỏ RAE, cho backbone tự do, STS bám drift sau mỗi epoch, và
+chỉ phạt phần drift mà STS không giải thích được: $\beta\,\mathrm{pen}\big(f_t(x),T(f_{t-1}(x))\big)$ với $T$ là ánh
+xạ tích luỹ. Kết quả trên ImageNet-A seed 1993:
+
+\begin{table}[H]
+\centering\small
+\caption{Các biến thể STS không có RAE (z(CA+LDA+AGM), Avg / Last; các run chạy đủ 10 task).}
+\begin{tabular}{lcc}
+\toprule
+Biến thể & Avg / Last & So với V1 \\
+\midrule
+V1 (tham chiếu) & 75.39 / 65.90 & -- \\
+Affine, MSE, $\beta=3$ & 75.37 / 65.96 & $-0.02$ / $+0.06$ \\
+Affine, MSE, $\beta=3$, bám 3 lần/epoch & 75.34 / 65.70 & $-0.05$ / $-0.20$ \\
+Procrustes + metric Fisher, $\beta=3$ & 75.46 / 65.90 & $+0.07$ / $0.00$ \\
+RAE + STS mỗi epoch & 75.67 / 66.69 & $+0.28$ / $+0.79$ \\
+\textbf{RAE + STS cuối task (= V2)} & \textbf{75.63 / 66.69} & $+0.24$ / $+0.79$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Các biến thể dừng sớm vì kém rõ rệt (CA tại task 3, V1: $78.37$): $\beta=1$ affine $77.36$; Procrustes $\beta=1$ và
+$\beta=3$ $77.79$; Fisher $\beta=10$ $75.79$; Fisher $\beta=30$ \emph{phân kỳ}; neo bằng mẫu đối kháng làm lớp mới
+giảm $\approx2.6$ điểm; replay Gaussian lớp cũ trong lúc train làm task 1 giảm $2.5$ điểm; neo Fisher (đích là đặc
+trưng cũ) thua V1 từ task 2. Thí nghiệm replay oracle cho thấy thống kê STS bám được gần thống kê thật, nhưng
+\emph{biểu diễn} lớp cũ đã xấu đi -- đúng như phân rã ở mục~\ref{sec:theory}: bỏ RAE làm phần (I) tăng nhiều hơn phần
+(II) giảm. Kết luận dẫn tới V2: giữ RAE cho phần (I), dùng STS cho phần (II).
+
+% =====================================================================================================================
+\section{Thảo luận}\label{sec:discussion}
+
+\paragraph{Điều đã làm được.} V2 vượt RSIAT gốc ổn định trên ImageNet-A (3/3 seed, $+0.94/+0.92$) và VTAB
+($+0.27/+0.22$), và trên CUB nếu chỉ dùng CA ($+0.23/+0.17$). Mỗi thành phần có lý do rõ: tổ hợp ba bộ phân loại khai
+thác sai số khác nhau; STS sửa hai điểm yếu của SDC (trọng số không phân biệt ảnh liên quan, covariance không được cập
+nhật).
+
+\paragraph{Giới hạn.}
+\begin{itemize}
+\item Mức cải thiện nhỏ ($<1$ điểm); trên VTAB và CUB mới có một lần chạy.
+\item Tổ hợp trọng số bằng nhau làm hại trên CUB; cần cách gán trọng số theo độ tin cậy của từng bộ phân loại, chọn
+      trên dữ liệu train giữ lại (không dùng test).
+\item Phân rã sai số cho thấy phần (I) chiếm ưu thế: các cải tiến về thống kê đang tiến gần trần (khoảng cách oracle
+      trên ImageNet-A chỉ còn $\approx0.4$ trung bình).
+\item Một chi tiết mã cần ghi nhận: ở task 0, learning rate của các nhóm tham số được đặt cố định $0.01$ (giá trị
+      \texttt{init\_lr} trong cấu hình không có tác dụng ở task 0). Mọi phiên bản chịu như nhau nên so sánh vẫn công bằng.
+\end{itemize}
+
+\paragraph{Vị trí so với các công trình liên quan.} Từng thành phần của STS có tiền lệ: ước lượng drift từ ảnh mới
+(SDC \cite{sdc}), mẫu đối kháng để đo drift (ADC \cite{adc}), ánh xạ đặc trưng cũ--mới (LDC \cite{ldc}). Điểm riêng của
+STS là bước E với thành phần nền, dịch chuyển riêng từng lớp co về ánh xạ chung theo kiểu Bayes phân cấp với độ co chọn
+bằng split-half, và vận chuyển nhất quán cả mean lẫn covariance. Để khẳng định đóng góp, cần so trực tiếp với ADC và LDC
+trên cùng backbone.
+
+% =====================================================================================================================
+\section{Kết luận}
+Báo cáo trình bày pipeline từ RSIAT tới V2. Dựa trên phân rã sai số thành phần do biểu diễn và phần do ước lượng thống
+kê, V1 cải thiện cách \emph{dùng} thống kê (tổ hợp CA, LDA, AGM), V2 cải thiện \emph{độ đúng} của thống kê lớp cũ (STS).
+V2 đạt $73.62/65.94$ trên ImageNet-A (3 seed), $94.99/94.91$ trên VTAB, và vượt RSIAT gốc trên CUB ở bộ phân loại CA.
+Các bước tiếp theo: (i) gán trọng số tổ hợp theo độ tin cậy cho CUB, (ii) chạy đủ 3 seed và thêm CIFAR-100, ImageNet-R,
+OmniBenchmark, (iii) so sánh với ADC và LDC. Hướng V3 (thống kê có độ bất định) đang được phát triển riêng và không
+thuộc phạm vi báo cáo này.
+
+% =====================================================================================================================
+\begin{thebibliography}{99}
+\bibitem{slca} G. Zhang, L. Wang, G. Kang, L. Chen, Y. Wei. SLCA: Slow Learner with Classifier Alignment for Continual
+Learning on a Pre-trained Model. \emph{ICCV}, 2023.
+\bibitem{ssiat} Y. Tan, Q. Zhou, X. Xiang, K. Wang, Y. Wu, Y. Li. Semantically-Shifted Incremental Adapter-Tuning is A
+Continual ViTransformer. \emph{CVPR}, 2024.
+\bibitem{sdc} L. Yu, B. Twardowski, X. Liu, L. Herranz, K. Wang, Y. Cheng, S. Jui, J. van de Weijer. Semantic Drift
+Compensation for Class-Incremental Learning. \emph{CVPR}, 2020.
+\bibitem{adc} D. Goswami, A. Soutif-Cormerais, Y. Liu, S. Kamath, B. Twardowski, J. van de Weijer. Resurrecting Old
+Classes with New Data for Exemplar-Free Continual Learning. \emph{CVPR}, 2024.
+\bibitem{ldc} A. Gomez-Villa, D. Goswami, K. Wang, A. D. Bagdanov, B. Twardowski, J. van de Weijer. Exemplar-free
+Continual Representation Learning via Learnable Drift Compensation. \emph{ECCV}, 2024.
+\bibitem{cosface} H. Wang, Y. Wang, Z. Zhou, X. Ji, D. Gong, J. Zhou, Z. Li, W. Liu. CosFace: Large Margin Cosine Loss
+for Deep Face Recognition. \emph{CVPR}, 2018.
+\bibitem{devroye} L. Devroye, L. Györfi, G. Lugosi. \emph{A Probabilistic Theory of Pattern Recognition}. Springer, 1996.
+\bibitem{esl} T. Hastie, R. Tibshirani, J. Friedman. \emph{The Elements of Statistical Learning}, 2nd ed., Springer, 2009.
+\bibitem{rahimi} A. Rahimi, B. Recht. Random Features for Large-Scale Kernel Machines. \emph{NeurIPS}, 2007.
+\bibitem{em} A. P. Dempster, N. M. Laird, D. B. Rubin. Maximum Likelihood from Incomplete Data via the EM Algorithm.
+\emph{J. Royal Statistical Society B}, 1977.
+\bibitem{procrustes} P. H. Schönemann. A Generalized Solution of the Orthogonal Procrustes Problem. \emph{Psychometrika},
+1966.
+\end{thebibliography}
+
+\end{document}

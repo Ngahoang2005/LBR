@@ -1,0 +1,4 @@
+[2026-11-06 20:10:20] start e2_lbr2_s2_b1024_s1993
+Terminated
+[2026-11-06 20:49:42] end e2_lbr2_s2_b1024_s1993 (exit 0)
+e2_lbr2_s2_b1024_s1993 chua xong

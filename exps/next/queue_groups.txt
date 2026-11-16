@@ -1,0 +1,106 @@
+[2026-11-15 10:53:38] da dung hang doi B4 cu
+[2026-11-15 11:08:22] smoke ok
+[2026-11-15 11:15:51] start imageneta_b6_lbr_gl03_s1993 (lan 1, GPU trong 10049 MiB)
+[2026-11-15 12:05:03] end imageneta_b6_lbr_gl03_s1993 (exit 0, ok)
+[2026-11-15 12:05:03] imageneta_b6_lbr_gl03_s1993 Avg 75.43799999999999 Last 65.77
+[2026-11-15 12:21:12] xong b6_lbr_gl03_s1993
+[2026-11-15 12:21:12] start imageneta_b6_rsiatd_gl03 (lan 1, GPU trong 10025 MiB)
+[2026-11-15 13:06:11] end imageneta_b6_rsiatd_gl03 (exit 0)
+[2026-11-15 13:06:44] imageneta_b6_rsiatd_gl03 XONG: 74.905 -> ../RSIAT/logs/adapter/imageneta/0/20/b6_rsiatd_gl03_1993_pretrained_vit_b16_224_in21k_adapter.log
+[2026-11-15 13:25:10] xong b6_rsiatd_gl03
+[2026-11-15 13:25:10] start imageneta_b6_lbr_gl05_s1993 (lan 1, GPU trong 10561 MiB)
+[2026-11-15 14:10:43] end imageneta_b6_lbr_gl05_s1993 (exit 0, ok)
+[2026-11-15 14:10:43] imageneta_b6_lbr_gl05_s1993 Avg 75.45400000000001 Last 65.7
+[2026-11-15 14:24:20] xong b6_lbr_gl05_s1993
+[2026-11-15 14:24:20] start imageneta_b6_rsiatd_gl05 (lan 1, GPU trong 10561 MiB)
+[2026-11-15 15:15:23] end imageneta_b6_rsiatd_gl05 (exit 0)
+[2026-11-15 15:15:53] imageneta_b6_rsiatd_gl05 XONG: 74.94 -> ../RSIAT/logs/adapter/imageneta/0/20/b6_rsiatd_gl05_1993_pretrained_vit_b16_224_in21k_adapter.log
+[2026-11-15 15:29:09] xong b6_rsiatd_gl05
+[2026-11-15 15:29:09] start imageneta_b6_lbr_lrx3_s1993 (lan 1, GPU trong 10563 MiB)
+[2026-11-15 15:59:06] end imageneta_b6_lbr_lrx3_s1993 (exit 1, KHONG_XONG: OOM)
+[2026-11-15 16:05:36] start imageneta_b6_lbr_lrx3_s1993 (lan 2, GPU trong 11359 MiB)
+[2026-11-15 16:09:55] end imageneta_b6_lbr_lrx3_s1993 (exit 1, KHONG_XONG: bi dung/loi)
+[2026-11-15 16:10:25] start imageneta_b6_lbr_lrx3_s1993 (lan 3, GPU trong 11359 MiB)
+[2026-11-15 16:14:40] end imageneta_b6_lbr_lrx3_s1993 (exit 1, KHONG_XONG: bi dung/loi)
+[2026-11-15 16:15:10] start imageneta_b6_lbr_lrx3_s1993 (lan 4, GPU trong 11359 MiB)
+[2026-11-15 16:19:31] end imageneta_b6_lbr_lrx3_s1993 (exit 1, KHONG_XONG: bi dung/loi)
+[2026-11-15 16:20:01] start imageneta_b6_lbr_lrx3_s1993 (lan 5, GPU trong 11359 MiB)
+[2026-11-15 16:24:16] end imageneta_b6_lbr_lrx3_s1993 (exit 1, KHONG_XONG: bi dung/loi)
+[2026-11-15 16:24:46] imageneta_b6_lbr_lrx3_s1993 KHONG XONG
+[2026-11-15 16:29:10] xong b6_lbr_lrx3_s1993
+[2026-11-15 16:29:10] start imageneta_b6_rsiatd_lrx3 (lan 1, GPU trong 11359 MiB)
+[2026-11-15 17:17:28] end imageneta_b6_rsiatd_lrx3 (exit 0)
+[2026-11-15 17:17:58] imageneta_b6_rsiatd_lrx3 XONG: 75.13499999999999 -> ../RSIAT/logs/adapter/imageneta/0/20/b6_rsiatd_lrx3_1993_pretrained_vit_b16_224_in21k_adapter.log
+[2026-11-15 17:34:50] xong b6_rsiatd_lrx3
+[2026-11-15 17:34:50] start imageneta_b6_lbr_lrx10_s1993 (lan 1, GPU trong 15279 MiB)
+[2026-11-15 18:22:01] end imageneta_b6_lbr_lrx10_s1993 (exit 0, ok)
+[2026-11-15 18:22:01] imageneta_b6_lbr_lrx10_s1993 Avg 75.398 Last 66.1
+[2026-11-15 18:37:08] xong b6_lbr_lrx10_s1993
+[2026-11-15 18:37:08] start imageneta_b6_rsiatd_lrx10 (lan 1, GPU trong 15255 MiB)
+[2026-11-15 19:22:55] end imageneta_b6_rsiatd_lrx10 (exit 0)
+[2026-11-15 19:23:25] imageneta_b6_rsiatd_lrx10 XONG: 75.11899999999999 -> ../RSIAT/logs/adapter/imageneta/0/20/b6_rsiatd_lrx10_1993_pretrained_vit_b16_224_in21k_adapter.log
+[2026-11-15 19:43:11] xong b6_rsiatd_lrx10
+[2026-11-15 19:43:11] start imageneta_b4_T5_a64_s1993 (lan 1, GPU trong 10369 MiB)
+[2026-11-15 20:29:39] end imageneta_b4_T5_a64_s1993 (exit 0, ok)
+[2026-11-15 20:29:39] imageneta_b4_T5_a64_s1993 Avg 74.239 Last 63.33
+[2026-11-15 20:43:08] xong b4_T5_a64_s1993
+[2026-11-15 20:43:08] start imageneta_b4_T4p_a64_s1993 (lan 1, GPU trong 15939 MiB)
+[2026-11-15 21:23:17] end imageneta_b4_T4p_a64_s1993 (exit 0, ok)
+[2026-11-15 21:23:17] imageneta_b4_T4p_a64_s1993 Avg 75.60400000000001 Last 66.62
+[2026-11-15 21:38:11] xong b4_T4p_a64_s1993
+[2026-11-15 22:12:12] start imageneta_b4_T5_a256_s1993 (lan 1, GPU trong 10221 MiB)
+[2026-11-15 23:00:19] end imageneta_b4_T5_a256_s1993 (exit 0, ok)
+[2026-11-15 23:00:19] imageneta_b4_T5_a256_s1993 Avg 74.196 Last 63.53
+[2026-11-15 23:15:09] xong b4_T5_a256_s1993
+[2026-11-15 23:15:09] start imageneta_b4_T4p_a256_s1993 (lan 1, GPU trong 10197 MiB)
+[2026-11-15 23:53:24] end imageneta_b4_T4p_a256_s1993 (exit 0, ok)
+[2026-11-15 23:53:25] imageneta_b4_T4p_a256_s1993 Avg 75.58800000000001 Last 65.83
+[2026-11-16 00:09:10] xong b4_T4p_a256_s1993
+[2026-11-16 00:09:10] start imageneta_b4_T5_a64_s1994 (lan 1, GPU trong 13695 MiB)
+[2026-11-16 00:50:10] end imageneta_b4_T5_a64_s1994 (exit 0, ok)
+[2026-11-16 00:50:10] imageneta_b4_T5_a64_s1994 Avg 71.66 Last 60.9
+[2026-11-16 01:02:20] xong b4_T5_a64_s1994
+[2026-11-16 01:02:21] start imageneta_b4_T4p_a64_s1994 (lan 1, GPU trong 9927 MiB)
+[2026-11-16 01:44:45] end imageneta_b4_T4p_a64_s1994 (exit 0, ok)
+[2026-11-16 01:44:45] imageneta_b4_T4p_a64_s1994 Avg 73.094 Last 65.04
+[2026-11-16 01:57:18] xong b4_T4p_a64_s1994
+[2026-11-16 01:57:19] start imageneta_b4_T2_a256_s1994 (lan 1, GPU trong 9927 MiB)
+[2026-11-16 02:39:27] end imageneta_b4_T2_a256_s1994 (exit 0, ok)
+[2026-11-16 02:39:27] imageneta_b4_T2_a256_s1994 Avg 73.369 Last 64.85
+[2026-11-16 02:51:53] xong b4_T2_a256_s1994
+[2026-11-16 02:51:53] start imageneta_b4_T5_a256_s1994 (lan 1, GPU trong 9927 MiB)
+[2026-11-16 03:30:10] end imageneta_b4_T5_a256_s1994 (exit 0, ok)
+[2026-11-16 03:30:10] imageneta_b4_T5_a256_s1994 Avg 71.944 Last 62.34
+[2026-11-16 03:40:06] xong b4_T5_a256_s1994
+[2026-11-16 03:40:06] start imageneta_b4_T4_a256_s1994 (lan 1, GPU trong 23735 MiB)
+[2026-11-16 04:22:14] end imageneta_b4_T4_a256_s1994 (exit 0, ok)
+[2026-11-16 04:22:14] imageneta_b4_T4_a256_s1994 Avg 73.35900000000001 Last 64.71
+[2026-11-16 04:34:26] xong b4_T4_a256_s1994
+[2026-11-16 04:34:26] start imageneta_b4_T4p_a256_s1994 (lan 1, GPU trong 10311 MiB)
+[2026-11-16 05:15:32] end imageneta_b4_T4p_a256_s1994 (exit 0, ok)
+[2026-11-16 05:15:32] imageneta_b4_T4p_a256_s1994 Avg 73.35499999999999 Last 64.58
+[2026-11-16 05:27:32] xong b4_T4p_a256_s1994
+[2026-11-16 05:27:32] start imageneta_b6_rsiatd_a256_s1994 (lan 1, GPU trong 10311 MiB)
+[2026-11-16 06:13:01] end imageneta_b6_rsiatd_a256_s1994 (exit 0)
+[2026-11-16 06:13:31] imageneta_b6_rsiatd_a256_s1994 XONG: 73.012 -> ../RSIAT/logs/adapter/imageneta/0/20/b6_rsiatd_a256_s1994_1994_pretrained_vit_b16_224_in21k_adapter.log
+[2026-11-16 06:25:48] xong b6_rsiatd_a256_s1994
+[2026-11-16 06:25:48] start imageneta_b6_lbr_a128_s1994 (lan 1, GPU trong 10311 MiB)
+[2026-11-16 07:06:52] end imageneta_b6_lbr_a128_s1994 (exit 0, ok)
+[2026-11-16 07:06:52] imageneta_b6_lbr_a128_s1994 Avg 73.43599999999999 Last 65.44
+[2026-11-16 07:19:04] xong b6_lbr_a128_s1994
+[2026-11-16 07:19:05] start imageneta_b6_rsiatd_a128_s1994 (lan 1, GPU trong 10311 MiB)
+[2026-11-16 08:00:30] end imageneta_b6_rsiatd_a128_s1994 (exit 0)
+[2026-11-16 08:01:00] imageneta_b6_rsiatd_a128_s1994 XONG: 72.799 -> ../RSIAT/logs/adapter/imageneta/0/20/b6_rsiatd_a128_s1994_1994_pretrained_vit_b16_224_in21k_adapter.log
+[2026-11-16 08:11:00] xong b6_rsiatd_a128_s1994
+[2026-11-16 08:11:00] start imageneta_b4_T2_a64_s1995 (lan 1, GPU trong 21816 MiB)
+[2026-11-16 08:54:06] end imageneta_b4_T2_a64_s1995 (exit 0, ok)
+[2026-11-16 08:54:06] imageneta_b4_T2_a64_s1995 Avg 71.26100000000001 Last 65.7
+[2026-11-16 09:07:09] xong b4_T2_a64_s1995
+[2026-11-16 09:07:09] start imageneta_b4_T5_a64_s1995 (lan 1, GPU trong 10073 MiB)
+[2026-11-16 09:49:57] end imageneta_b4_T5_a64_s1995 (exit 0, ok)
+[2026-11-16 09:49:57] imageneta_b4_T5_a64_s1995 Avg 70.94 Last 62.8
+[2026-11-16 09:52:16] xong b6_lbr_gl03_s1993
+[2026-11-16 09:52:16] xong b6_rsiatd_gl03
+[2026-11-16 09:52:16] xong b6_lbr_gl05_s1993
+[2026-11-16 09:52:16] xong b6_rsiatd_gl05
+[2026-11-16 09:52:16] start imageneta_b6_lbr_lrx3_s1993 (lan 1, GPU trong 10073 MiB)

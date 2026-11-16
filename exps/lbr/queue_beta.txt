@@ -1,0 +1,17 @@
+[2026-11-16 10:17:11] start imageneta_lbr_beta1_s1993 (lan 1, GPU trong 10073 MiB)
+[2026-11-16 10:59:39] end imageneta_lbr_beta1_s1993 (exit 0, ok)
+[2026-11-16 10:59:39] imageneta_lbr_beta1_s1993 Avg 75.505 Last 65.17
+[2026-11-16 10:59:39] start imageneta_lbr_beta10_s1993 (lan 1, GPU trong 10069 MiB)
+[2026-11-16 11:36:15] end imageneta_lbr_beta10_s1993 (exit 0, ok)
+[2026-11-16 11:36:15] imageneta_lbr_beta10_s1993 Avg 74.864 Last 65.83
+[2026-11-16 11:36:15] start imageneta_lbr_beta0p3_s1993 (lan 1, GPU trong 10069 MiB)
+[2026-11-16 11:36:32] doi thu tu: beta 5 truoc
+[2026-11-16 11:36:32] start imageneta_lbr_beta5_s1993 (lan 1, GPU trong 10069 MiB)
+[2026-11-16 12:17:48] end imageneta_lbr_beta5_s1993 (exit 0, ok)
+[2026-11-16 12:17:48] imageneta_lbr_beta5_s1993 Avg 75.24600000000001 Last 65.96
+[2026-11-16 12:17:48] start imageneta_lbr_beta0p3_s1993 (lan 1, GPU trong 10321 MiB)
+[2026-11-16 12:18:10] doi thu tu: beta 2 truoc
+[2026-11-16 12:18:10] start imageneta_lbr_beta2_s1993 (lan 1, GPU trong 10321 MiB)
+[2026-11-16 12:59:42] end imageneta_lbr_beta2_s1993 (exit 0, ok)
+[2026-11-16 12:59:42] imageneta_lbr_beta2_s1993 Avg 75.71200000000002 Last 66.23
+[2026-11-16 12:59:42] start imageneta_lbr_beta0p3_s1993 (lan 1, GPU trong 10315 MiB)

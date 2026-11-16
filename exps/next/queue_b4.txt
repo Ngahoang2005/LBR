@@ -1,0 +1,94 @@
+[2026-11-14 17:26:41] start imageneta_b6_lbr_mlp_s1993 (lan 1, GPU trong 23733 MiB)
+[2026-11-14 18:02:18] end imageneta_b6_lbr_mlp_s1993 (exit 0, ok)
+[2026-11-14 18:02:18] imageneta_b6_lbr_mlp_s1993 Avg 65.38900000000001 Last 55.96
+[2026-11-14 18:10:58] phan tich xong b6_lbr_mlp_s1993
+[2026-11-14 18:10:58] start imageneta_b6_rsiatd_mlp (lan 1, GPU trong 23733 MiB)
+[2026-11-14 18:48:54] end imageneta_b6_rsiatd_mlp (exit 0)
+[2026-11-14 18:49:24] imageneta_b6_rsiatd_mlp XONG: 65.86000000000001 -> ../RSIAT/logs/adapter/imageneta/0/20/b6_rsiatd_mlp_1993_pretrained_vit_b16_224_in21k_adapter.log
+[2026-11-14 18:57:55] phan tich xong b6_rsiatd_mlp
+[2026-11-14 18:57:55] start imageneta_b4_T1_a64_s1993 (lan 1, GPU trong 23733 MiB)
+[2026-11-14 19:33:17] end imageneta_b4_T1_a64_s1993 (exit 0, ok)
+[2026-11-14 19:33:17] imageneta_b4_T1_a64_s1993 Avg 75.56500000000001 Last 66.43
+[2026-11-14 19:41:57] phan tich xong b4_T1_a64_s1993
+[2026-11-14 19:41:57] start imageneta_b4_T1o_a64_s1993 (lan 1, GPU trong 23733 MiB)
+[2026-11-14 20:19:12] end imageneta_b4_T1o_a64_s1993 (exit 0, ok)
+[2026-11-14 20:19:12] imageneta_b4_T1o_a64_s1993 Avg 75.5 Last 66.43
+[2026-11-14 20:27:38] phan tich xong b4_T1o_a64_s1993
+[2026-11-14 20:27:38] start imageneta_b4_T2_a64_s1993 (lan 1, GPU trong 23733 MiB)
+[2026-11-14 21:03:54] end imageneta_b4_T2_a64_s1993 (exit 0, ok)
+[2026-11-14 21:03:54] imageneta_b4_T2_a64_s1993 Avg 75.65800000000002 Last 66.75
+[2026-11-14 21:12:29] phan tich xong b4_T2_a64_s1993
+[2026-11-14 21:12:29] start imageneta_b4_T2o_a64_s1993 (lan 1, GPU trong 23733 MiB)
+[2026-11-14 21:49:32] end imageneta_b4_T2o_a64_s1993 (exit 0, ok)
+[2026-11-14 21:49:32] imageneta_b4_T2o_a64_s1993 Avg 75.50199999999998 Last 66.16
+[2026-11-14 21:58:11] phan tich xong b4_T2o_a64_s1993
+[2026-11-14 21:58:11] start imageneta_b4_T3_a64_s1993 (lan 1, GPU trong 23733 MiB)
+[2026-11-14 22:33:40] end imageneta_b4_T3_a64_s1993 (exit 0, ok)
+[2026-11-14 22:33:40] imageneta_b4_T3_a64_s1993 Avg 75.369 Last 66.69
+[2026-11-14 22:42:11] phan tich xong b4_T3_a64_s1993
+[2026-11-14 22:42:11] start imageneta_b4_T3o_a64_s1993 (lan 1, GPU trong 23733 MiB)
+[2026-11-14 23:19:48] end imageneta_b4_T3o_a64_s1993 (exit 0, ok)
+[2026-11-14 23:19:48] imageneta_b4_T3o_a64_s1993 Avg 75.497 Last 66.56
+[2026-11-14 23:28:25] phan tich xong b4_T3o_a64_s1993
+[2026-11-14 23:37:30] phan tich xong b4_T4_a64_s1993
+[2026-11-14 23:37:30] start imageneta_b4_T4o_a64_s1993 (lan 1, GPU trong 23733 MiB)
+[2026-11-15 00:14:04] end imageneta_b4_T4o_a64_s1993 (exit 0, ok)
+[2026-11-15 00:14:04] imageneta_b4_T4o_a64_s1993 Avg 75.542 Last 66.69
+[2026-11-15 00:22:39] phan tich xong b4_T4o_a64_s1993
+[2026-11-15 00:22:39] start imageneta_b4_T1_a256_s1993 (lan 1, GPU trong 23733 MiB)
+[2026-11-15 00:59:37] end imageneta_b4_T1_a256_s1993 (exit 0, ok)
+[2026-11-15 00:59:37] imageneta_b4_T1_a256_s1993 Avg 75.642 Last 65.96
+[2026-11-15 01:08:06] phan tich xong b4_T1_a256_s1993
+[2026-11-15 01:08:06] start imageneta_b4_T1o_a256_s1993 (lan 1, GPU trong 23733 MiB)
+[2026-11-15 01:44:36] end imageneta_b4_T1o_a256_s1993 (exit 0, ok)
+[2026-11-15 01:44:36] imageneta_b4_T1o_a256_s1993 Avg 75.631 Last 66.1
+[2026-11-15 01:53:07] phan tich xong b4_T1o_a256_s1993
+[2026-11-15 01:53:07] start imageneta_b4_T2_a256_s1993 (lan 1, GPU trong 23733 MiB)
+[2026-11-15 02:28:43] end imageneta_b4_T2_a256_s1993 (exit 0, ok)
+[2026-11-15 02:28:43] imageneta_b4_T2_a256_s1993 Avg 75.60100000000001 Last 66.1
+[2026-11-15 02:37:17] phan tich xong b4_T2_a256_s1993
+[2026-11-15 02:37:17] start imageneta_b4_T2o_a256_s1993 (lan 1, GPU trong 23733 MiB)
+[2026-11-15 03:11:33] end imageneta_b4_T2o_a256_s1993 (exit 0, ok)
+[2026-11-15 03:11:33] imageneta_b4_T2o_a256_s1993 Avg 75.619 Last 65.9
+[2026-11-15 03:20:08] phan tich xong b4_T2o_a256_s1993
+[2026-11-15 03:20:08] start imageneta_b4_T3_a256_s1993 (lan 1, GPU trong 23733 MiB)
+[2026-11-15 03:56:56] end imageneta_b4_T3_a256_s1993 (exit 0, ok)
+[2026-11-15 03:56:56] imageneta_b4_T3_a256_s1993 Avg 75.661 Last 66.23
+[2026-11-15 04:05:25] phan tich xong b4_T3_a256_s1993
+[2026-11-15 04:05:25] start imageneta_b4_T3o_a256_s1993 (lan 1, GPU trong 23733 MiB)
+[2026-11-15 04:40:28] end imageneta_b4_T3o_a256_s1993 (exit 0, ok)
+[2026-11-15 04:40:28] imageneta_b4_T3o_a256_s1993 Avg 75.607 Last 66.29
+[2026-11-15 04:49:01] phan tich xong b4_T3o_a256_s1993
+[2026-11-15 04:58:03] phan tich xong b4_T4_a256_s1993
+[2026-11-15 04:58:03] start imageneta_b4_T4o_a256_s1993 (lan 1, GPU trong 23733 MiB)
+[2026-11-15 05:33:46] end imageneta_b4_T4o_a256_s1993 (exit 0, ok)
+[2026-11-15 05:33:46] imageneta_b4_T4o_a256_s1993 Avg 75.66299999999998 Last 66.03
+[2026-11-15 05:42:14] phan tich xong b4_T4o_a256_s1993
+[2026-11-15 05:42:14] start imageneta_b4_T1_a64_s1994 (lan 1, GPU trong 23733 MiB)
+[2026-11-15 06:18:48] end imageneta_b4_T1_a64_s1994 (exit 0, ok)
+[2026-11-15 06:18:49] imageneta_b4_T1_a64_s1994 Avg 73.265 Last 65.11
+[2026-11-15 06:26:48] phan tich xong b4_T1_a64_s1994
+[2026-11-15 06:26:49] start imageneta_b4_T1o_a64_s1994 (lan 1, GPU trong 23733 MiB)
+[2026-11-15 07:03:26] end imageneta_b4_T1o_a64_s1994 (exit 0, ok)
+[2026-11-15 07:03:26] imageneta_b4_T1o_a64_s1994 Avg 73.191 Last 64.85
+[2026-11-15 07:11:32] phan tich xong b4_T1o_a64_s1994
+[2026-11-15 07:11:32] start imageneta_b4_T2_a64_s1994 (lan 1, GPU trong 23733 MiB)
+[2026-11-15 07:46:43] end imageneta_b4_T2_a64_s1994 (exit 0, ok)
+[2026-11-15 07:46:43] imageneta_b4_T2_a64_s1994 Avg 73.04800000000002 Last 65.11
+[2026-11-15 07:54:49] phan tich xong b4_T2_a64_s1994
+[2026-11-15 07:54:49] start imageneta_b4_T2o_a64_s1994 (lan 1, GPU trong 23733 MiB)
+[2026-11-15 08:30:15] end imageneta_b4_T2o_a64_s1994 (exit 0, ok)
+[2026-11-15 08:30:15] imageneta_b4_T2o_a64_s1994 Avg 73.166 Last 64.78
+[2026-11-15 08:38:16] phan tich xong b4_T2o_a64_s1994
+[2026-11-15 08:38:16] start imageneta_b4_T3_a64_s1994 (lan 1, GPU trong 23733 MiB)
+[2026-11-15 09:14:46] end imageneta_b4_T3_a64_s1994 (exit 0, ok)
+[2026-11-15 09:14:46] imageneta_b4_T3_a64_s1994 Avg 73.30699999999999 Last 64.85
+[2026-11-15 09:22:55] phan tich xong b4_T3_a64_s1994
+[2026-11-15 09:22:55] start imageneta_b4_T3o_a64_s1994 (lan 1, GPU trong 23733 MiB)
+[2026-11-15 09:58:04] end imageneta_b4_T3o_a64_s1994 (exit 0, ok)
+[2026-11-15 09:58:04] imageneta_b4_T3o_a64_s1994 Avg 73.20800000000001 Last 64.85
+[2026-11-15 10:06:07] phan tich xong b4_T3o_a64_s1994
+[2026-11-15 10:06:08] start imageneta_b4_T4_a64_s1994 (lan 1, GPU trong 23733 MiB)
+[2026-11-15 10:41:23] end imageneta_b4_T4_a64_s1994 (exit 0, ok)
+[2026-11-15 10:41:23] imageneta_b4_T4_a64_s1994 Avg 73.22300000000003 Last 65.44
+[2026-11-15 10:53:03] phan tich xong b4_T4_a64_s1994

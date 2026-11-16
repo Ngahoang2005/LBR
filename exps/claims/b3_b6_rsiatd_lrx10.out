@@ -1,0 +1,28 @@
+2026-11-15 19:23:39,197 => [168, 136, 51, 9, 183, 101, 171, 99, 42, 159, 191, 70, 16, 188, 27, 10, 175, 26, 68, 187, 98, 6, 85, 35, 112, 43, 100, 0, 103, 181, 88, 59, 4, 2, 116, 174, 94, 80, 106, 1, 147, 17, 141, 131, 72, 23, 173, 54, 197, 118, 87, 32, 79, 104, 91, 19, 135, 107, 178, 36, 11, 199, 142, 8, 122, 3, 28, 57, 153, 172, 190, 56, 49, 44, 97, 62, 151, 169, 194, 55, 192, 12, 189, 78, 66, 180, 15, 137, 109, 134, 92, 119, 126, 52, 170, 40, 148, 65, 144, 64, 138, 45, 77, 89, 154, 90, 71, 193, 74, 30, 113, 143, 96, 84, 67, 50, 186, 156, 69, 21, 18, 111, 108, 58, 125, 157, 150, 110, 182, 129, 166, 83, 81, 60, 13, 165, 14, 176, 63, 117, 5, 22, 145, 121, 38, 41, 82, 127, 114, 20, 31, 53, 37, 163, 196, 130, 152, 162, 86, 76, 24, 34, 184, 149, 33, 128, 198, 155, 146, 167, 139, 120, 140, 102, 47, 25, 158, 123, 46, 164, 61, 7, 115, 75, 133, 160, 105, 132, 179, 124, 48, 73, 93, 39, 95, 195, 29, 177, 185, 161]
+I'm using ViT with adapters.
+I'm using ViT with adapters.
+/home/tahuuloc/Documents/httn/RSIAT/exps/claims/b3_memory.py:171: UserWarning: Converting a tensor with requires_grad=True to a scalar may lead to unexpected behavior.
+Consider using tensor.detach() first. (Triggered internally at /pytorch/torch/csrc/autograd/generated/python_variable_methods.cpp:836.)
+  r[m][f"mean_err_{sp}"] = float(np.mean([float((fake[c].mean(0) - R[c].mean(0)).norm()) for c in ok]))
+2026-11-15 19:25:17,186 => task 1 (20 lop cu): goc mean (test, do) f_sdc 40.26 z_sdc 40.13 z_oracle 39.88; acc f_sdc 83.61 z_sdc 83.33 z_oracle 83.61 real 83.61
+I'm using ViT with adapters.
+2026-11-15 19:26:10,880 => task 2 (40 lop cu): goc mean (test, do) f_sdc 40.82 z_sdc 40.61 z_oracle 40.30; acc f_sdc 79.20 z_sdc 80.04 z_oracle 79.62 real 79.62
+I'm using ViT with adapters.
+2026-11-15 19:27:18,756 => task 3 (60 lop cu): goc mean (test, do) f_sdc 43.21 z_sdc 42.90 z_oracle 42.57; acc f_sdc 76.93 z_sdc 77.79 z_oracle 77.22 real 78.65
+I'm using ViT with adapters.
+2026-11-15 19:28:28,651 => task 4 (80 lop cu): goc mean (test, do) f_sdc 42.09 z_sdc 41.82 z_oracle 41.41; acc f_sdc 74.55 z_sdc 74.32 z_oracle 74.91 real 76.46
+I'm using ViT with adapters.
+2026-11-15 19:29:50,046 => task 5 (100 lop cu): goc mean (test, do) f_sdc 44.25 z_sdc 43.86 z_oracle 43.41; acc f_sdc 72.62 z_sdc 72.92 z_oracle 73.23 real 73.85
+I'm using ViT with adapters.
+Traceback (most recent call last):
+  File "/home/tahuuloc/Documents/httn/RSIAT/exps/claims/b3_memory.py", line 206, in <module>
+    main()
+  File "/home/tahuuloc/Documents/httn/RSIAT/exps/claims/b3_memory.py", line 168, in main
+    r[m] = {"acc": ca_accuracy(smp, a, Fte.float(), yte, seed=t)}
+  File "/home/tahuuloc/Documents/httn/RSIAT/exps/claims/b3_memory.py", line 88, in ca_accuracy
+    W = train_ca(W0, sample, a, torch.Generator(device="cuda").manual_seed(seed))
+  File "/home/tahuuloc/Documents/httn/RSIAT/exps/claims/b2_fidelity.py", line 75, in train_ca
+    X = F.normalize(Fx.reshape(C * B, d)[p], dim=-1)
+  File "/home/tahuuloc/miniconda3/envs/RSIAT/lib/python3.10/site-packages/torch/nn/functional.py", line 5708, in normalize
+    return input / denom
+torch.OutOfMemoryError: CUDA out of memory. Tried to allocate 420.00 MiB. GPU 0 has a total capacity of 23.42 GiB of which 302.19 MiB is free. Process 3685248 has 1.62 GiB memory in use. Process 3685250 has 2.15 GiB memory in use. Process 3685244 has 1.62 GiB memory in use. Process 3685246 has 3.28 GiB memory in use. Process 3685252 has 7.61 GiB memory in use. Including non-PyTorch memory, this process has 6.58 GiB memory in use. Of the allocated memory 5.63 GiB is allocated by PyTorch, and 613.91 MiB is reserved by PyTorch but unallocated. If reserved but unallocated memory is large try setting PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True to avoid fragmentation.  See documentation for Memory Management  (https://docs.pytorch.org/docs/stable/notes/cuda.html#optimizing-memory-usage-with-pytorch-cuda-alloc-conf)

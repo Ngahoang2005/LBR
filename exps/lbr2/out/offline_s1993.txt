@@ -1,0 +1,67 @@
+I'm using ViT with adapters.
+== exps/lbr/dump/imageneta_lbr2_obs_xp_s1993: 10 task
+
+[3a] ti so lac quan (1 = khong lac quan): lop moi | lop cu
+  task 0: x' 1.004 | nan   f 1.052 | nan   f_norm 1.012 | nan
+  task 1: x' 0.974 | 1.004   f 0.988 | 1.053   f_norm 0.986 | 1.012
+  task 2: x' 1.026 | 0.989   f 0.924 | 1.022   f_norm 0.971 | 1.000
+  task 3: x' 1.058 | 1.001   f 1.125 | 0.989   f_norm 1.037 | 0.990
+  task 4: x' 1.053 | 1.012   f 1.077 | 1.020   f_norm 1.058 | 1.002
+  task 5: x' 0.973 | 1.021   f 0.980 | 1.034   f_norm 0.989 | 1.012
+  task 6: x' 1.024 | 1.015   f 1.017 | 1.028   f_norm 1.030 | 1.010
+  task 7: x' 1.035 | 1.015   f 1.019 | 1.023   f_norm 1.028 | 1.012
+  task 8: x' 0.985 | 1.016   f 0.993 | 1.020   f_norm 0.983 | 1.014
+  task 9: x' 1.012 | 1.013   f 1.021 | 1.018   f_norm 1.020 | 1.012
+  TB x'    : lop moi 1.014  lop cu 1.010
+  TB f     : lop moi 1.020  lop cu 1.023
+  TB f_norm: lop moi 1.011  lop cu 1.007
+
+[3b] do khop voi f that cua lop cu (oracle), f chuan hoa: sai so mean / do rong | ti so do rong | energy
+  task 1: push 0.105 1.024 0.0368   pushG 0.115 1.025 0.0386   fG 0.063 1.012 0.0270
+  task 2: push 0.105 1.027 0.0348   pushG 0.114 1.028 0.0365   fG 0.068 1.012 0.0259
+  task 3: push 0.110 1.037 0.0426   pushG 0.119 1.036 0.0443   fG 0.073 1.014 0.0313
+  task 4: push 0.112 1.038 0.0414   pushG 0.121 1.039 0.0432   fG 0.075 1.016 0.0307
+  task 5: push 0.120 1.041 0.0460   pushG 0.129 1.042 0.0477   fG 0.080 1.017 0.0332
+  task 6: push 0.121 1.040 0.0471   pushG 0.129 1.041 0.0488   fG 0.083 1.019 0.0344
+  task 7: push 0.121 1.038 0.0463   pushG 0.130 1.039 0.0480   fG 0.086 1.019 0.0343
+  task 8: push 0.126 1.040 0.0467   pushG 0.134 1.039 0.0484   fG 0.093 1.020 0.0352
+  task 9: push 0.127 1.037 0.0467   pushG 0.135 1.037 0.0484   fG 0.095 1.020 0.0356
+  TB push  : sai so mean 0.116  ti so do rong 1.036  energy 0.0431
+  TB pushG : sai so mean 0.125  ti so do rong 1.036  energy 0.0449
+  TB fG    : sai so mean 0.080  ti so do rong 1.017  energy 0.0320
+  seed 0 task 1: f_gauss 82.78  xp_gauss 83.89  xp_push 83.61  xp_push_nok 83.33
+  seed 0 task 2: f_gauss 79.20  xp_gauss 80.46  xp_push 80.04  xp_push_nok 80.04
+  seed 0 task 3: f_gauss 78.65  xp_gauss 78.94  xp_push 79.23  xp_push_nok 78.80
+  seed 0 task 4: f_gauss 75.27  xp_gauss 75.15  xp_push 75.62  xp_push_nok 75.27
+  seed 0 task 5: f_gauss 74.46  xp_gauss 73.85  xp_push 74.15  xp_push_nok 74.26
+  seed 0 task 6: f_gauss 71.10  xp_gauss 71.10  xp_push 71.36  xp_push_nok 71.10
+  seed 0 task 7: f_gauss 68.83  xp_gauss 68.83  xp_push 69.63  xp_push_nok 69.07
+  seed 0 task 8: f_gauss 67.60  xp_gauss 67.24  xp_push 67.24  xp_push_nok 66.88
+  seed 0 task 9: f_gauss 66.43  xp_gauss 66.36  xp_push 66.03  xp_push_nok 66.03
+  seed 1 task 1: f_gauss 82.50  xp_gauss 84.17  xp_push 83.33  xp_push_nok 83.33
+  seed 1 task 2: f_gauss 79.83  xp_gauss 80.25  xp_push 80.46  xp_push_nok 79.62
+  seed 1 task 3: f_gauss 78.22  xp_gauss 78.94  xp_push 79.08  xp_push_nok 78.51
+  seed 1 task 4: f_gauss 75.39  xp_gauss 75.62  xp_push 75.74  xp_push_nok 75.62
+  seed 1 task 5: f_gauss 73.64  xp_gauss 73.74  xp_push 74.67  xp_push_nok 74.05
+  seed 1 task 6: f_gauss 71.01  xp_gauss 70.65  xp_push 71.19  xp_push_nok 71.36
+  seed 1 task 7: f_gauss 68.99  xp_gauss 68.67  xp_push 69.63  xp_push_nok 68.99
+  seed 1 task 8: f_gauss 67.31  xp_gauss 67.31  xp_push 67.38  xp_push_nok 67.17
+  seed 1 task 9: f_gauss 65.96  xp_gauss 66.36  xp_push 66.23  xp_push_nok 66.10
+  seed 2 task 1: f_gauss 82.50  xp_gauss 83.61  xp_push 83.61  xp_push_nok 83.61
+  seed 2 task 2: f_gauss 80.04  xp_gauss 80.46  xp_push 80.88  xp_push_nok 80.25
+  seed 2 task 3: f_gauss 77.79  xp_gauss 79.23  xp_push 78.94  xp_push_nok 79.08
+  seed 2 task 4: f_gauss 75.62  xp_gauss 75.03  xp_push 75.15  xp_push_nok 75.15
+  seed 2 task 5: f_gauss 74.05  xp_gauss 73.64  xp_push 74.05  xp_push_nok 74.05
+  seed 2 task 6: f_gauss 71.10  xp_gauss 71.01  xp_push 71.54  xp_push_nok 71.28
+  seed 2 task 7: f_gauss 68.91  xp_gauss 68.99  xp_push 69.47  xp_push_nok 69.07
+  seed 2 task 8: f_gauss 67.60  xp_gauss 67.53  xp_push 67.67  xp_push_nok 67.17
+  seed 2 task 9: f_gauss 65.77  xp_gauss 66.29  xp_push 66.23  xp_push_nok 66.16
+
+[4] CA tren dump (backbone co dinh), trung binh 3 seed CA; task 1..9: tong / cu / moi
+  f_gauss      82.59 79.69 78.22 75.43 74.05 71.07 68.91 67.50 66.05  | avg 73.72  last 66.05  old 73.12  new 73.61
+  xp_gauss     83.89 80.39 79.04 75.27 73.74 70.92 68.83 67.36 66.34  | avg 73.97  last 66.34  old 73.53  new 74.00
+  xp_push      83.52 80.46 79.08 75.51 74.29 71.36 69.58 67.43 66.16  | avg 74.16  last 66.16  old 73.77  new 73.68
+  xp_push_nok  83.43 79.97 78.80 75.35 74.12 71.25 69.04 67.07 66.10  | avg 73.90  last 66.10  old 73.32  new 74.33
+  xp_gauss - f_gauss: +1.30 +0.70 +0.81 -0.16 -0.31 -0.15 -0.08 -0.14 +0.29  | avg +0.25  last +0.29  (moi seed +0.17 +0.32 +0.27)
+  xp_push - f_gauss: +0.93 +0.77 +0.86 +0.08 +0.24 +0.30 +0.67 -0.07 +0.11  | avg +0.43  last +0.11  (moi seed +0.29 +0.54 +0.46)
+  xp_push_nok - f_gauss: +0.83 +0.28 +0.57 -0.08 +0.07 +0.18 +0.13 -0.43 +0.04  | avg +0.18  last +0.04  (moi seed +0.05 +0.21 +0.27)

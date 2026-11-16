@@ -1,0 +1,112 @@
+2026-11-01 02:01:59,975 [trainer.py] => config: exps/sts/imageneta_sts_rp3_s1993.json
+2026-11-01 02:01:59,976 [trainer.py] => prefix: RSIAT_sts_rp3_s1993
+2026-11-01 02:01:59,976 [trainer.py] => dataset: imageneta
+2026-11-01 02:01:59,976 [trainer.py] => shuffle: True
+2026-11-01 02:01:59,976 [trainer.py] => ssca: True
+2026-11-01 02:01:59,976 [trainer.py] => ca: True
+2026-11-01 02:01:59,976 [trainer.py] => init_cls: 20
+2026-11-01 02:01:59,976 [trainer.py] => increment: 20
+2026-11-01 02:01:59,976 [trainer.py] => model_name: adapter
+2026-11-01 02:01:59,976 [trainer.py] => convnet_type: pretrained_vit_b16_224_in21k_adapter
+2026-11-01 02:01:59,976 [trainer.py] => device: [device(type='cuda', index=0)]
+2026-11-01 02:01:59,976 [trainer.py] => seed: 1993
+2026-11-01 02:01:59,976 [trainer.py] => init_epochs: 20
+2026-11-01 02:01:59,976 [trainer.py] => warmup_epoch: 3
+2026-11-01 02:01:59,976 [trainer.py] => inc_epochs: 15
+2026-11-01 02:01:59,976 [trainer.py] => ca_epochs: 10
+2026-11-01 02:01:59,976 [trainer.py] => init_lr: 0.006688537652915857
+2026-11-01 02:01:59,976 [trainer.py] => batch_size: 48
+2026-11-01 02:01:59,976 [trainer.py] => weight_decay: 5.929828534160845e-07
+2026-11-01 02:01:59,976 [trainer.py] => min_lr: 0
+2026-11-01 02:01:59,976 [trainer.py] => ffn_num: 64
+2026-11-01 02:01:59,976 [trainer.py] => optimizer: sgd
+2026-11-01 02:01:59,976 [trainer.py] => scale: 30.0
+2026-11-01 02:01:59,976 [trainer.py] => margin: 0.3
+2026-11-01 02:01:59,976 [trainer.py] => alpha: 1.0
+2026-11-01 02:01:59,976 [trainer.py] => rs_margin: 1.5
+2026-11-01 02:01:59,976 [trainer.py] => lambda_rs: 0.0
+2026-11-01 02:01:59,976 [trainer.py] => diag_dump: True
+2026-11-01 02:01:59,976 [trainer.py] => diag_dir: exps/sts/dump
+2026-11-01 02:01:59,976 [trainer.py] => rae: False
+2026-11-01 02:01:59,976 [trainer.py] => sts: True
+2026-11-01 02:01:59,976 [trainer.py] => sts_freq: epoch
+2026-11-01 02:01:59,976 [trainer.py] => sts_estep: tracked
+2026-11-01 02:01:59,976 [trainer.py] => sts_eta: 0.3
+2026-11-01 02:01:59,976 [trainer.py] => sts_bg_prior: 0.5
+2026-11-01 02:01:59,976 [trainer.py] => sts_min_mass: 5.0
+2026-11-01 02:01:59,976 [trainer.py] => sts_n0: 50.0
+2026-11-01 02:01:59,976 [trainer.py] => sts_cov: True
+2026-11-01 02:01:59,976 [trainer.py] => sts_alphas: [0.01, 0.1, 1.0, 10.0, 100.0]
+2026-11-01 02:01:59,976 [trainer.py] => sts_adv: True
+2026-11-01 02:01:59,976 [trainer.py] => sts_adv_k: 16
+2026-11-01 02:01:59,976 [trainer.py] => sts_adv_steps: 10
+2026-11-01 02:01:59,976 [trainer.py] => sts_adv_step: 0.00784313725490196
+2026-11-01 02:01:59,976 [trainer.py] => sts_trk_beta: 3.0
+2026-11-01 02:01:59,976 [trainer.py] => sts_replay_w: 1.0
+2026-11-01 02:01:59,976 [trainer.py] => sts_replay_bs: 48
+2026-11-01 02:01:59,976 [trainer.py] => diag_replay: True
+2026-11-01 02:01:59,986 [data_manager.py] => [168, 136, 51, 9, 183, 101, 171, 99, 42, 159, 191, 70, 16, 188, 27, 10, 175, 26, 68, 187, 98, 6, 85, 35, 112, 43, 100, 0, 103, 181, 88, 59, 4, 2, 116, 174, 94, 80, 106, 1, 147, 17, 141, 131, 72, 23, 173, 54, 197, 118, 87, 32, 79, 104, 91, 19, 135, 107, 178, 36, 11, 199, 142, 8, 122, 3, 28, 57, 153, 172, 190, 56, 49, 44, 97, 62, 151, 169, 194, 55, 192, 12, 189, 78, 66, 180, 15, 137, 109, 134, 92, 119, 126, 52, 170, 40, 148, 65, 144, 64, 138, 45, 77, 89, 154, 90, 71, 193, 74, 30, 113, 143, 96, 84, 67, 50, 186, 156, 69, 21, 18, 111, 108, 58, 125, 157, 150, 110, 182, 129, 166, 83, 81, 60, 13, 165, 14, 176, 63, 117, 5, 22, 145, 121, 38, 41, 82, 127, 114, 20, 31, 53, 37, 163, 196, 130, 152, 162, 86, 76, 24, 34, 184, 149, 33, 128, 198, 155, 146, 167, 139, 120, 140, 102, 47, 25, 158, 123, 46, 164, 61, 7, 115, 75, 133, 160, 105, 132, 179, 124, 48, 73, 93, 39, 95, 195, 29, 177, 185, 161]
+This is for the BaseNet initialization.
+I'm using ViT with adapters.
+After BaseNet initialization.
+2026-11-01 02:02:02,802 [trainer.py] => All params: 86988288
+2026-11-01 02:02:02,803 [trainer.py] => Trainable params: 1189632
+2026-11-01 02:02:02,806 [RSIAT_adapter.py] => Learning on 0-20
+The number of training dataset: 705
+2026-11-01 02:02:04,005 [toolkit.py] => All params: 86259456
+2026-11-01 02:02:04,005 [toolkit.py] => Trainable params: 1204992
+  0%|          | 0/20 [00:00<?, ?it/s]Task 0, Epoch 1/20 => Loss 9.407, Loss_c 9.407, Losses_rt 0.000, Train_accy 46.95, Test_accy 70.29:   0%|          | 0/20 [00:27<?, ?it/s]Task 0, Epoch 1/20 => Loss 9.407, Loss_c 9.407, Losses_rt 0.000, Train_accy 46.95, Test_accy 70.29:   5%|▌         | 1/20 [00:27<08:43, 27.54s/it]Task 0, Epoch 2/20 => Loss 5.551, Loss_c 5.551, Losses_rt 0.000, Train_accy 81.56, Test_accy 78.29:   5%|▌         | 1/20 [00:52<08:43, 27.54s/it]Task 0, Epoch 2/20 => Loss 5.551, Loss_c 5.551, Losses_rt 0.000, Train_accy 81.56, Test_accy 78.29:  10%|█         | 2/20 [00:52<07:50, 26.13s/it]Task 0, Epoch 3/20 => Loss 4.418, Loss_c 4.418, Losses_rt 0.000, Train_accy 89.50, Test_accy 83.43:  10%|█         | 2/20 [01:18<07:50, 26.13s/it]Task 0, Epoch 3/20 => Loss 4.418, Loss_c 4.418, Losses_rt 0.000, Train_accy 89.50, Test_accy 83.43:  15%|█▌        | 3/20 [01:18<07:22, 26.03s/it]Task 0, Epoch 4/20 => Loss 4.008, Loss_c 4.008, Losses_rt 0.000, Train_accy 90.35, Test_accy 82.86:  15%|█▌        | 3/20 [01:45<07:22, 26.03s/it]Task 0, Epoch 4/20 => Loss 4.008, Loss_c 4.008, Losses_rt 0.000, Train_accy 90.35, Test_accy 82.86:  20%|██        | 4/20 [01:45<06:59, 26.24s/it]Task 0, Epoch 5/20 => Loss 3.777, Loss_c 3.777, Losses_rt 0.000, Train_accy 90.07, Test_accy 84.57:  20%|██        | 4/20 [02:09<06:59, 26.24s/it]Task 0, Epoch 5/20 => Loss 3.777, Loss_c 3.777, Losses_rt 0.000, Train_accy 90.07, Test_accy 84.57:  25%|██▌       | 5/20 [02:09<06:25, 25.67s/it]Task 0, Epoch 6/20 => Loss 3.485, Loss_c 3.485, Losses_rt 0.000, Train_accy 92.06, Test_accy 84.57:  25%|██▌       | 5/20 [02:38<06:25, 25.67s/it]Task 0, Epoch 6/20 => Loss 3.485, Loss_c 3.485, Losses_rt 0.000, Train_accy 92.06, Test_accy 84.57:  30%|███       | 6/20 [02:38<06:15, 26.81s/it]Task 0, Epoch 7/20 => Loss 3.485, Loss_c 3.485, Losses_rt 0.000, Train_accy 91.63, Test_accy 84.57:  30%|███       | 6/20 [03:06<06:15, 26.81s/it]Task 0, Epoch 7/20 => Loss 3.485, Loss_c 3.485, Losses_rt 0.000, Train_accy 91.63, Test_accy 84.57:  35%|███▌      | 7/20 [03:06<05:50, 26.98s/it]Task 0, Epoch 8/20 => Loss 3.287, Loss_c 3.287, Losses_rt 0.000, Train_accy 92.06, Test_accy 86.29:  35%|███▌      | 7/20 [03:33<05:50, 26.98s/it]Task 0, Epoch 8/20 => Loss 3.287, Loss_c 3.287, Losses_rt 0.000, Train_accy 92.06, Test_accy 86.29:  40%|████      | 8/20 [03:33<05:26, 27.17s/it]Task 0, Epoch 9/20 => Loss 3.430, Loss_c 3.430, Losses_rt 0.000, Train_accy 90.92, Test_accy 82.86:  40%|████      | 8/20 [04:03<05:26, 27.17s/it]Task 0, Epoch 9/20 => Loss 3.430, Loss_c 3.430, Losses_rt 0.000, Train_accy 90.92, Test_accy 82.86:  45%|████▌     | 9/20 [04:03<05:06, 27.84s/it]Task 0, Epoch 10/20 => Loss 3.156, Loss_c 3.156, Losses_rt 0.000, Train_accy 92.77, Test_accy 86.29:  45%|████▌     | 9/20 [04:29<05:06, 27.84s/it]Task 0, Epoch 10/20 => Loss 3.156, Loss_c 3.156, Losses_rt 0.000, Train_accy 92.77, Test_accy 86.29:  50%|█████     | 10/20 [04:29<04:32, 27.27s/it]Task 0, Epoch 11/20 => Loss 3.104, Loss_c 3.104, Losses_rt 0.000, Train_accy 92.20, Test_accy 86.86:  50%|█████     | 10/20 [04:56<04:32, 27.27s/it]Task 0, Epoch 11/20 => Loss 3.104, Loss_c 3.104, Losses_rt 0.000, Train_accy 92.20, Test_accy 86.86:  55%|█████▌    | 11/20 [04:56<04:07, 27.46s/it]Task 0, Epoch 12/20 => Loss 3.096, Loss_c 3.096, Losses_rt 0.000, Train_accy 91.77, Test_accy 85.71:  55%|█████▌    | 11/20 [05:24<04:07, 27.46s/it]Task 0, Epoch 12/20 => Loss 3.096, Loss_c 3.096, Losses_rt 0.000, Train_accy 91.77, Test_accy 85.71:  60%|██████    | 12/20 [05:24<03:39, 27.38s/it]Task 0, Epoch 13/20 => Loss 2.889, Loss_c 2.889, Losses_rt 0.000, Train_accy 93.48, Test_accy 86.29:  60%|██████    | 12/20 [05:50<03:39, 27.38s/it]Task 0, Epoch 13/20 => Loss 2.889, Loss_c 2.889, Losses_rt 0.000, Train_accy 93.48, Test_accy 86.29:  65%|██████▌   | 13/20 [05:50<03:09, 27.11s/it]Task 0, Epoch 14/20 => Loss 2.868, Loss_c 2.868, Losses_rt 0.000, Train_accy 93.19, Test_accy 85.71:  65%|██████▌   | 13/20 [06:18<03:09, 27.11s/it]Task 0, Epoch 14/20 => Loss 2.868, Loss_c 2.868, Losses_rt 0.000, Train_accy 93.19, Test_accy 85.71:  70%|███████   | 14/20 [06:18<02:44, 27.35s/it]Task 0, Epoch 15/20 => Loss 2.649, Loss_c 2.649, Losses_rt 0.000, Train_accy 94.18, Test_accy 85.71:  70%|███████   | 14/20 [06:45<02:44, 27.35s/it]Task 0, Epoch 15/20 => Loss 2.649, Loss_c 2.649, Losses_rt 0.000, Train_accy 94.18, Test_accy 85.71:  75%|███████▌  | 15/20 [06:45<02:15, 27.11s/it]Task 0, Epoch 16/20 => Loss 2.730, Loss_c 2.730, Losses_rt 0.000, Train_accy 93.76, Test_accy 85.71:  75%|███████▌  | 15/20 [07:11<02:15, 27.11s/it]Task 0, Epoch 16/20 => Loss 2.730, Loss_c 2.730, Losses_rt 0.000, Train_accy 93.76, Test_accy 85.71:  80%|████████  | 16/20 [07:11<01:47, 26.89s/it]Task 0, Epoch 17/20 => Loss 2.636, Loss_c 2.636, Losses_rt 0.000, Train_accy 94.33, Test_accy 86.29:  80%|████████  | 16/20 [07:39<01:47, 26.89s/it]Task 0, Epoch 17/20 => Loss 2.636, Loss_c 2.636, Losses_rt 0.000, Train_accy 94.33, Test_accy 86.29:  85%|████████▌ | 17/20 [07:39<01:22, 27.37s/it]Task 0, Epoch 18/20 => Loss 2.760, Loss_c 2.760, Losses_rt 0.000, Train_accy 94.47, Test_accy 86.29:  85%|████████▌ | 17/20 [08:05<01:22, 27.37s/it]Task 0, Epoch 18/20 => Loss 2.760, Loss_c 2.760, Losses_rt 0.000, Train_accy 94.47, Test_accy 86.29:  90%|█████████ | 18/20 [08:05<00:53, 26.92s/it]Task 0, Epoch 19/20 => Loss 2.926, Loss_c 2.926, Losses_rt 0.000, Train_accy 92.20, Test_accy 86.29:  90%|█████████ | 18/20 [08:33<00:53, 26.92s/it]Task 0, Epoch 19/20 => Loss 2.926, Loss_c 2.926, Losses_rt 0.000, Train_accy 92.20, Test_accy 86.29:  95%|█████████▌| 19/20 [08:33<00:27, 27.08s/it]Task 0, Epoch 20/20 => Loss 2.831, Loss_c 2.831, Losses_rt 0.000, Train_accy 92.48, Test_accy 86.29:  95%|█████████▌| 19/20 [09:00<00:27, 27.08s/it]Task 0, Epoch 20/20 => Loss 2.831, Loss_c 2.831, Losses_rt 0.000, Train_accy 92.48, Test_accy 86.29: 100%|██████████| 20/20 [09:00<00:00, 27.21s/it]Task 0, Epoch 20/20 => Loss 2.831, Loss_c 2.831, Losses_rt 0.000, Train_accy 92.48, Test_accy 86.29: 100%|██████████| 20/20 [09:00<00:00, 27.04s/it]
+2026-11-01 02:11:04,802 [RSIAT_adapter.py] => Task 0, Epoch 20/20 => Loss 2.831, Loss_c 2.831, Losses_rt 0.000, Train_accy 92.48, Test_accy 86.29
+2026-11-01 02:11:32,298 [trainer.py] => CNN: {'total': 86.29, '00-09': 84.42, '10-19': 87.76, 'old': 0.0, 'new': 86.29}
+2026-11-01 02:11:32,298 [trainer.py] => CNN top1 curve: [86.29]
+2026-11-01 02:11:32,298 [trainer.py] => CNN top5 curve: [97.14]
+Average Accuracy (CNN): 86.29
+2026-11-01 02:11:32,298 [trainer.py] => Average Accuracy (CNN): 86.29
+2026-11-01 02:11:32,298 [trainer.py] => All params: 87003648
+2026-11-01 02:11:32,298 [trainer.py] => Trainable params: 1204992
+2026-11-01 02:11:32,302 [RSIAT_adapter.py] => Learning on 20-40
+The number of training dataset: 766
+2026-11-01 02:13:15,062 [sts.py] => [STS] task 1: 766 anh moi, K=20 lop cu | N_c min 0.00 trung vi 7.11 | 19 lop < 5.0, dung 156 mau doi khang | nen 97.8%
+2026-11-01 02:13:15,064 [toolkit.py] => All params: 87019008
+2026-11-01 02:13:15,064 [toolkit.py] => Trainable params: 1220352
+  0%|          | 0/15 [00:00<?, ?it/s]2026-11-01 02:14:15,371 [sts.py] => [STS] task 1 buoc 1: alpha 1.0, phan du chung 0.188 | lop bam rieng 14/20 | nen 97.8% | ||buoc mean|| TB 7.2033
+Task 1, Epoch 1/15 => Loss 13.394, Loss_c 13.286, Losses_rt 0.108, Train_accy 39.82, Test_accy 75.56:   0%|          | 0/15 [01:00<?, ?it/s]Task 1, Epoch 1/15 => Loss 13.394, Loss_c 13.286, Losses_rt 0.108, Train_accy 39.82, Test_accy 75.56:   7%|▋         | 1/15 [01:00<14:04, 60.31s/it]2026-11-01 02:15:15,066 [sts.py] => [STS] task 1 buoc 2: alpha 10.0, phan du chung 0.419 | lop bam rieng 13/20 | nen 98.0% | ||buoc mean|| TB 4.1998
+Task 1, Epoch 2/15 => Loss 9.097, Loss_c 8.981, Losses_rt 0.115, Train_accy 75.20, Test_accy 81.67:   7%|▋         | 1/15 [02:00<14:04, 60.31s/it]  Task 1, Epoch 2/15 => Loss 9.097, Loss_c 8.981, Losses_rt 0.115, Train_accy 75.20, Test_accy 81.67:  13%|█▎        | 2/15 [02:00<12:59, 59.95s/it]2026-11-01 02:16:22,540 [sts.py] => [STS] task 1 buoc 3: alpha 10.0, phan du chung 0.319 | lop bam rieng 13/20 | nen 98.4% | ||buoc mean|| TB 4.3624
+Task 1, Epoch 3/15 => Loss 7.878, Loss_c 7.713, Losses_rt 0.165, Train_accy 79.63, Test_accy 81.67:  13%|█▎        | 2/15 [03:07<12:59, 59.95s/it]Task 1, Epoch 3/15 => Loss 7.878, Loss_c 7.713, Losses_rt 0.165, Train_accy 79.63, Test_accy 81.67:  20%|██        | 3/15 [03:07<12:40, 63.38s/it]2026-11-01 02:17:27,577 [sts.py] => [STS] task 1 buoc 4: alpha 10.0, phan du chung 0.257 | lop bam rieng 13/20 | nen 98.7% | ||buoc mean|| TB 3.7354
+Task 1, Epoch 4/15 => Loss 7.361, Loss_c 7.168, Losses_rt 0.193, Train_accy 83.42, Test_accy 83.33:  20%|██        | 3/15 [04:12<12:40, 63.38s/it]Task 1, Epoch 4/15 => Loss 7.361, Loss_c 7.168, Losses_rt 0.193, Train_accy 83.42, Test_accy 83.33:  27%|██▋       | 4/15 [04:12<11:44, 64.04s/it]2026-11-01 02:18:32,963 [sts.py] => [STS] task 1 buoc 5: alpha 10.0, phan du chung 0.252 | lop bam rieng 13/20 | nen 99.0% | ||buoc mean|| TB 3.3460
+Task 1, Epoch 5/15 => Loss 7.225, Loss_c 7.012, Losses_rt 0.213, Train_accy 85.64, Test_accy 81.67:  27%|██▋       | 4/15 [05:17<11:44, 64.04s/it]Task 1, Epoch 5/15 => Loss 7.225, Loss_c 7.012, Losses_rt 0.213, Train_accy 85.64, Test_accy 81.67:  33%|███▎      | 5/15 [05:17<10:45, 64.52s/it]2026-11-01 02:19:14,936 [sts.py] => [STS] task 1 buoc 6: alpha 10.0, phan du chung 0.225 | lop bam rieng 13/20 | nen 99.1% | ||buoc mean|| TB 3.2609
+Task 1, Epoch 6/15 => Loss 7.198, Loss_c 6.969, Losses_rt 0.229, Train_accy 84.20, Test_accy 82.50:  33%|███▎      | 5/15 [05:59<10:45, 64.52s/it]Task 1, Epoch 6/15 => Loss 7.198, Loss_c 6.969, Losses_rt 0.229, Train_accy 84.20, Test_accy 82.50:  40%|████      | 6/15 [05:59<08:31, 56.86s/it]2026-11-01 02:19:53,379 [sts.py] => [STS] task 1 buoc 7: alpha 10.0, phan du chung 0.203 | lop bam rieng 13/20 | nen 99.2% | ||buoc mean|| TB 3.2230
+Task 1, Epoch 7/15 => Loss 7.109, Loss_c 6.862, Losses_rt 0.247, Train_accy 86.42, Test_accy 82.22:  40%|████      | 6/15 [06:38<08:31, 56.86s/it]Task 1, Epoch 7/15 => Loss 7.109, Loss_c 6.862, Losses_rt 0.247, Train_accy 86.42, Test_accy 82.22:  47%|████▋     | 7/15 [06:38<06:46, 50.84s/it]2026-11-01 02:20:35,863 [sts.py] => [STS] task 1 buoc 8: alpha 10.0, phan du chung 0.231 | lop bam rieng 13/20 | nen 99.3% | ||buoc mean|| TB 2.6937
+Task 1, Epoch 8/15 => Loss 7.016, Loss_c 6.753, Losses_rt 0.263, Train_accy 86.95, Test_accy 81.94:  47%|████▋     | 7/15 [07:20<06:46, 50.84s/it]Task 1, Epoch 8/15 => Loss 7.016, Loss_c 6.753, Losses_rt 0.263, Train_accy 86.95, Test_accy 81.94:  53%|█████▎    | 8/15 [07:20<05:37, 48.18s/it]2026-11-01 02:21:23,525 [sts.py] => [STS] task 1 buoc 9: alpha 10.0, phan du chung 0.262 | lop bam rieng 13/20 | nen 99.4% | ||buoc mean|| TB 2.4639
+Task 1, Epoch 9/15 => Loss 6.914, Loss_c 6.659, Losses_rt 0.255, Train_accy 87.99, Test_accy 82.22:  53%|█████▎    | 8/15 [08:08<05:37, 48.18s/it]Task 1, Epoch 9/15 => Loss 6.914, Loss_c 6.659, Losses_rt 0.255, Train_accy 87.99, Test_accy 82.22:  60%|██████    | 9/15 [08:08<04:48, 48.02s/it]2026-11-01 02:22:10,222 [sts.py] => [STS] task 1 buoc 10: alpha 10.0, phan du chung 0.275 | lop bam rieng 13/20 | nen 99.4% | ||buoc mean|| TB 1.9090
+Task 1, Epoch 10/15 => Loss 6.849, Loss_c 6.581, Losses_rt 0.268, Train_accy 87.60, Test_accy 81.94:  60%|██████    | 9/15 [08:55<04:48, 48.02s/it]Task 1, Epoch 10/15 => Loss 6.849, Loss_c 6.581, Losses_rt 0.268, Train_accy 87.60, Test_accy 81.94:  67%|██████▋   | 10/15 [08:55<03:58, 47.61s/it]2026-11-01 02:22:53,565 [sts.py] => [STS] task 1 buoc 11: alpha 10.0, phan du chung 0.240 | lop bam rieng 13/20 | nen 99.4% | ||buoc mean|| TB 1.6305
+Task 1, Epoch 11/15 => Loss 7.075, Loss_c 6.799, Losses_rt 0.276, Train_accy 87.34, Test_accy 81.94:  67%|██████▋   | 10/15 [09:38<03:58, 47.61s/it]Task 1, Epoch 11/15 => Loss 7.075, Loss_c 6.799, Losses_rt 0.276, Train_accy 87.34, Test_accy 81.94:  73%|███████▎  | 11/15 [09:38<03:05, 46.30s/it]2026-11-01 02:23:36,697 [sts.py] => [STS] task 1 buoc 12: alpha 10.0, phan du chung 0.222 | lop bam rieng 13/20 | nen 99.4% | ||buoc mean|| TB 0.9517
+Task 1, Epoch 12/15 => Loss 6.975, Loss_c 6.712, Losses_rt 0.263, Train_accy 87.21, Test_accy 82.22:  73%|███████▎  | 11/15 [10:21<03:05, 46.30s/it]Task 1, Epoch 12/15 => Loss 6.975, Loss_c 6.712, Losses_rt 0.263, Train_accy 87.21, Test_accy 82.22:  80%|████████  | 12/15 [10:21<02:16, 45.34s/it]2026-11-01 02:24:20,510 [sts.py] => [STS] task 1 buoc 13: alpha 10.0, phan du chung 0.313 | lop bam rieng 13/20 | nen 99.4% | ||buoc mean|| TB 0.5866
+Task 1, Epoch 13/15 => Loss 6.934, Loss_c 6.668, Losses_rt 0.266, Train_accy 88.77, Test_accy 82.50:  80%|████████  | 12/15 [11:05<02:16, 45.34s/it]Task 1, Epoch 13/15 => Loss 6.934, Loss_c 6.668, Losses_rt 0.266, Train_accy 88.77, Test_accy 82.50:  87%|████████▋ | 13/15 [11:05<01:29, 44.88s/it]2026-11-01 02:25:04,513 [sts.py] => [STS] task 1 buoc 14: alpha 1.0, phan du chung 0.269 | lop bam rieng 13/20 | nen 99.5% | ||buoc mean|| TB 0.2804
+Task 1, Epoch 14/15 => Loss 6.801, Loss_c 6.534, Losses_rt 0.267, Train_accy 86.42, Test_accy 82.22:  87%|████████▋ | 13/15 [11:49<01:29, 44.88s/it]Task 1, Epoch 14/15 => Loss 6.801, Loss_c 6.534, Losses_rt 0.267, Train_accy 86.42, Test_accy 82.22:  93%|█████████▎| 14/15 [11:49<00:44, 44.61s/it]2026-11-01 02:25:49,651 [sts.py] => [STS] task 1 buoc 15: alpha 10.0, phan du chung 0.277 | lop bam rieng 13/20 | nen 99.5% | ||buoc mean|| TB 0.0669
+Task 1, Epoch 15/15 => Loss 6.813, Loss_c 6.550, Losses_rt 0.264, Train_accy 86.95, Test_accy 82.22:  93%|█████████▎| 14/15 [12:34<00:44, 44.61s/it]Task 1, Epoch 15/15 => Loss 6.813, Loss_c 6.550, Losses_rt 0.264, Train_accy 86.95, Test_accy 82.22: 100%|██████████| 15/15 [12:34<00:00, 44.77s/it]Task 1, Epoch 15/15 => Loss 6.813, Loss_c 6.550, Losses_rt 0.264, Train_accy 86.95, Test_accy 82.22: 100%|██████████| 15/15 [12:34<00:00, 50.31s/it]
+2026-11-01 02:25:49,651 [RSIAT_adapter.py] => Task 1, Epoch 15/15 => Loss 6.813, Loss_c 6.550, Losses_rt 0.264, Train_accy 86.95, Test_accy 82.22
+2026-11-01 02:25:56,799 [sts.py] => [STS] task 1 xong: 15 buoc, dung 156 mau doi khang, lop bam rieng o buoc cuoi 13/20
+2026-11-01 02:26:15,191 [base.py] => CA Task 1 => Loss 0.067, Test_accy 82.220
+2026-11-01 02:26:20,270 [base.py] => CA Task 1 => Loss 0.061, Test_accy 82.220
+2026-11-01 02:26:24,982 [base.py] => CA Task 1 => Loss 0.050, Test_accy 82.220
+2026-11-01 02:26:29,655 [base.py] => CA Task 1 => Loss 0.042, Test_accy 82.220
+2026-11-01 02:26:34,305 [base.py] => CA Task 1 => Loss 0.041, Test_accy 82.220
+2026-11-01 02:26:38,886 [base.py] => CA Task 1 => Loss 0.043, Test_accy 82.220
+2026-11-01 02:26:43,327 [base.py] => CA Task 1 => Loss 0.039, Test_accy 82.220
+2026-11-01 02:26:47,955 [base.py] => CA Task 1 => Loss 0.037, Test_accy 81.940
+2026-11-01 02:26:52,693 [base.py] => CA Task 1 => Loss 0.032, Test_accy 81.940
+2026-11-01 02:26:57,225 [base.py] => CA Task 1 => Loss 0.035, Test_accy 81.940
+2026-11-01 02:27:19,767 [trainer.py] => CNN: {'total': 81.94, '00-09': 66.23, '10-19': 85.71, '20-29': 87.88, '30-39': 84.88, 'old': 77.14, 'new': 86.49}
+2026-11-01 02:27:19,768 [trainer.py] => CNN top1 curve: [86.29, 81.94]
+2026-11-01 02:27:19,768 [trainer.py] => CNN top5 curve: [97.14, 97.5]
+Average Accuracy (CNN): 84.11500000000001
+2026-11-01 02:27:19,768 [trainer.py] => Average Accuracy (CNN): 84.11500000000001
+2026-11-01 02:27:19,768 [trainer.py] => All params: 87019008
+2026-11-01 02:27:19,768 [trainer.py] => Trainable params: 1220352
+2026-11-01 02:27:19,771 [RSIAT_adapter.py] => Learning on 40-60
+The number of training dataset: 511
+2026-11-01 02:30:09,459 [sts.py] => [STS] task 2: 511 anh moi, K=40 lop cu | N_c min 0.00 trung vi 4.70 | 40 lop < 5.0, dung 251 mau doi khang | nen 100.0%
+2026-11-01 02:30:09,461 [toolkit.py] => All params: 87034368
+2026-11-01 02:30:09,461 [toolkit.py] => Trainable params: 1235712
+  0%|          | 0/15 [00:00<?, ?it/s]

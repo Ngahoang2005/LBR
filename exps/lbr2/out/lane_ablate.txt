@@ -1,0 +1,10 @@
+[2026-11-08 13:13:59] bat dau ablation ImageNet-A
+[2026-11-08 13:13:59] start abl_base_s1993 (lan 1, GPU trong 12523 MiB)
+[2026-11-08 15:25:35] end abl_base_s1993 (exit 0, ok)
+[2026-11-08 15:25:35] start abl_A0_none_s1993 (lan 1, GPU trong 12523 MiB)
+[2026-11-08 17:31:09] end abl_A0_none_s1993 (exit 0, ok)
+[2026-11-08 17:31:09] start abl_A1_trans_s1993 (lan 1, GPU trong 19262 MiB)
+[2026-11-08 19:28:27] end abl_A1_trans_s1993 (exit 0, ok)
+[2026-11-08 19:28:27] start abl_A2_sdc_s1993 (lan 1, GPU trong 13881 MiB)
+[2026-11-08 21:41:49] end abl_A2_sdc_s1993 (exit 0, ok)
+[2026-11-08 21:41:49] start abl_A3_procr_s1993 (lan 1, GPU trong 13157 MiB)

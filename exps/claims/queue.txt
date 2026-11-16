@@ -1,0 +1,12 @@
+[2026-11-12 12:40:55] B2 lbr
+[2026-11-12 12:41:14] start imageneta_claims_rsiat (lan 1, GPU trong 23734 MiB)
+[2026-11-12 13:16:01] end imageneta_claims_rsiat (exit 0)
+[2026-11-12 13:16:31] imageneta_claims_rsiat XONG: 74.76000000000002 -> ../RSIAT/logs/adapter/imageneta/0/20/claims_rsiat_1993_pretrained_vit_b16_224_in21k_adapter.log
+[2026-11-12 13:16:31] start imageneta_claims_ssiat (lan 1, GPU trong 23734 MiB)
+[2026-11-12 13:54:19] end imageneta_claims_ssiat (exit 0)
+[2026-11-12 13:54:50] imageneta_claims_ssiat XONG: 73.208 -> ../RSIAT/logs/adapter/imageneta/0/20/claims_ssiat_1993_pretrained_vit_b16_224_in21k_adapter.log
+[2026-11-12 13:54:50] B2 rsiat
+[2026-11-12 13:55:35] B1 lbr
+[2026-11-12 13:59:53] B1 rsiat
+[2026-11-12 14:03:48] B1 ssiat
+[2026-11-12 14:07:43] xong
